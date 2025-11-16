@@ -1,3 +1,4 @@
+
 # VirtualTachometer  
 
 > This meter is an industrial tachometer application.  
@@ -34,6 +35,7 @@ This project was created to solve `<the need to measure speeds when you don’t 
 <p align="center">
   <img src="assets/IMG01.JPG" alt="Main screen" width="500">
 </p>
+
 ---
 
 ## 🔧 Measurement modes
@@ -87,4 +89,4 @@ This project was created to solve `<the need to measure speeds when you don’t 
 
 ## Link to use the app
 
-[https://firerayo.github.io/VirtualTachometer/](https://firerayo.github.io/VirtualTachometer/)
+[https://firerayo.github.io/VirtualTachometer/](https://firerayo.github.io/VirtualTachometer/

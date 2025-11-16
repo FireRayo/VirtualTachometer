@@ -54,7 +54,7 @@ This project was created to solve `<the need to measure speeds when you don’t 
 4. From here we need the time it takes the moving reference to travel between the two fixed references. Use the **Initial** and **Final** buttons to store the starting and ending time.  
 5. When you press the **Calculate** button, the application performs Final Time − Initial Time = Total Time. Then it performs V = D / T to give you the linear speed.
 
----
+
 
 ### 2️⃣ Diameter
 
@@ -70,7 +70,6 @@ This project was created to solve `<the need to measure speeds when you don’t 
 4. From here we need the time it takes the roller to make one full rotation. Use the **Initial** and **Final** buttons to store the starting and ending time of the rotation.  
 5. When you press the **Calculate** button, the application performs Final Time − Initial Time = Total Time. Then it performs V = (Pi * Diameter) / T to give you the linear speed.
 
----
 
 ### 3️⃣ Revolutions
 

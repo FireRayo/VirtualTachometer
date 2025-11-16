@@ -15,7 +15,7 @@
       --accent: #2a3244;
       --shadow: 0 10px 25px rgba(0,0,0,.35);
       --radius: 16px;
-      --btn-gap: 10px;
+      --btn-gap: 14px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -41,7 +41,7 @@
       box-shadow:var(--shadow); padding:18px; margin:14px 0; }
 
     /* Horizontal switch groups */
-    .switch-row{display:flex; gap:18px; flex-wrap:wrap; align-items:center; justify-content:center}
+    .switch-row{display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center}
 
     /* Accessible radio-as-switch */
     .switch{
@@ -85,7 +85,8 @@
 
     /* Controls */
     .controls{ display:flex; gap: var(--btn-gap); justify-content:center; }
-    .btn{ padding:10px 16px; border-radius:12px; border:1px solid #223049; background:linear-gradient(180deg,#1b2334,#151b29); color:#eaf2ff; font-weight:700; letter-spacing:.4px;
+    .controls + .controls{margin-top: var(--btn-gap);}
+    .btn{ padding:14px 20px; border-radius:12px; border:1px solid #223049; background:linear-gradient(180deg,#1b2334,#151b29); color:#eaf2ff; font-weight:700; letter-spacing:.4px;
       box-shadow:var(--shadow); cursor:pointer; min-width:100px; text-align:center; transition: transform .08s ease, background .18s ease, border-color .18s ease;
     }
     .btn:disabled{ opacity:.5; cursor:not-allowed; }

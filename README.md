@@ -23,11 +23,13 @@ This project was created to solve `<the need to measure speeds when you don’t 
 
 ## ✨ Features
 
+- ✅ It works on Chrome and Safari browser, on any operating system (Windows, MacOS, Linux, Android, iOS).
+- ✅ Simple HTML5/JavaScript interface.
 - ✅ Calculates linear and rotational speed based on the time it takes the object to travel a given distance.
 - ✅ Support for different units (mm, cm, m, in, ft, etc.).
-- ✅ Simple HTML5/JavaScript interface.
 - ✅ Support for videos with FPS (30 and 60).
 - ✅ No installation required, it runs directly in the browser (SAFARI/CHROME).
+
 
 ---
 

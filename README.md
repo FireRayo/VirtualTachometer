@@ -85,6 +85,6 @@ This project was created to solve `<the need to measure speeds when you don’t 
 
 ---
 
-## Application link
+## Link to use the app
 
 [https://firerayo.github.io/VirtualTachometer/](https://firerayo.github.io/VirtualTachometer/)

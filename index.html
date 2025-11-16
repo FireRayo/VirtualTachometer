@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VirtualTachometer</title>
+  <style>
+    :root{
+      --bg: #0f1115;
+      --card: #161a22;
+      --muted: #8b94a7;
+      --text: #e8eefc;
+      --brand: #6aa7ff;
+      --brand-strong:#3f89ff;
+      --accent: #2a3244;
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+      --radius: 16px;
+      --btn-gap: 10px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background:linear-gradient(180deg, #0e1014 0%, #0b0d11 100%);
+      color:var(--text);
+      display:flex;justify-content:center;align-items:flex-start;
+    }
+    .wrap{width:min(1024px, 96vw); padding:32px 16px 64px}
+    h1{
+      margin: 4px 0 20px;
+      font-weight:800; letter-spacing:.4px;
+      text-align:center;
+      font-size:clamp(24px, 3.6vw, 40px);
+      background:linear-gradient(90deg, #9fc5ff, #fff);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      text-shadow: 0 1px 0 rgba(255,255,255,.08);
+    }
+
+    .card{ background:var(--card); border:1px solid #222836; border-radius: var(--radius);
+      box-shadow:var(--shadow); padding:18px; margin:14px 0; }
+
+    /* Horizontal switch groups */
+    .switch-row{display:flex; gap:18px; flex-wrap:wrap; align-items:center; justify-content:center}
+
+    /* Accessible radio-as-switch */
+    .switch{
+      display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
+      padding:10px 12px; border-radius:12px; background: #121621; border:1px solid #232a3a;
+      transition: transform .08s ease, border-color .2s ease, background .2s ease;
+    }
+    .switch:hover{ transform: translateY(-1px); }
+    .switch:active{ transform: translateY(0); }
+    .switch input{ position:absolute; opacity:0; pointer-events:none; }
+
+    /* visual toggle */
+    .slider{ position:relative; width:48px; height:26px; background:#20283a; border-radius:999px; box-shadow: inset 0 1px 3px rgba(0,0,0,.4); }
+    .knob{ position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background: #c9d8ff; box-shadow:0 2px 5px rgba(0,0,0,.35); transition:left .18s ease, background .18s ease; }
+
+    /* checked state */
+    .switch input:checked + .slider{ background: linear-gradient(90deg, var(--brand) 0%, var(--brand-strong) 100%); }
+    .switch input:checked + .slider .knob{ left:24px; background:#fff; }
+
+    .label-text{ font-weight:600; letter-spacing:.2px; color:var(--text); }
+    .subtle{ color:var(--muted); font-size:.92rem; }
+
+    /* Video area */
+    .video-card{ padding:16px 16px 20px }
+    .video-shell{ position:relative; background:#0c1019; border:1px solid #20283a; border-radius:14px; overflow:hidden; }
+    video{ display:block; width:100%; max-height:62vh; background:#0b0e15; }
+
+    /* Drop overlay */
+    .drop-mask{ position:absolute; inset:0; display:none; place-items:center; text-align:center;
+      background:rgba(50,90,255,.1); border:3px dashed rgba(110,150,255,.45); color:#cfe0ff; font-weight:700; font-size:clamp(14px,2.5vw,18px);
+    }
+    .video-shell.drag .drop-mask{ display:grid; }
+    .video-hint{ position:absolute; inset:auto 12px 12px 12px; color:#a9b5cf; font-size:.95rem; }
+
+    /* Progress */
+    .progress{ width:100%; appearance:none; height:8px; border-radius:999px; background:#1a2131; margin:12px 0 10px; outline:none;
+      box-shadow: inset 0 0 0 1px #232b3f;
+    }
+    .progress::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow: 0 0 0 4px rgba(90,140,255,.35); border:none; cursor:pointer; }
+    .progress::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:#fff; border:none; box-shadow: 0 0 0 4px rgba(90,140,255,.35); cursor:pointer; }
+
+    /* Controls */
+    .controls{ display:flex; gap: var(--btn-gap); justify-content:center; }
+    .btn{ padding:10px 16px; border-radius:12px; border:1px solid #223049; background:linear-gradient(180deg,#1b2334,#151b29); color:#eaf2ff; font-weight:700; letter-spacing:.4px;
+      box-shadow:var(--shadow); cursor:pointer; min-width:100px; text-align:center; transition: transform .08s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+    .btn:hover:not(:disabled){ transform: translateY(-1px); border-color:#2b4270; background:linear-gradient(180deg,#243150,#1b2436) }
+    .btn:active:not(:disabled){ transform: translateY(0) }
+
+    /* Footer row inside card for small notes */
+    .footnote{ margin-top:6px; color:var(--muted); font-size:.9rem; text-align:center; }
+    .marks{ margin-top:6px; font-size:.95rem; text-align:center; }
+
+    @media (max-width:540px){
+      .btn{ min-width:88px; padding:10px 12px }
+      .switch-row{ gap:12px }
+    }
+
+    /* Dynamic field for card_1 */
+    .field-row{display:flex; justify-content:center; margin-top:12px}
+    .num-input{ width:min(320px, 92%); padding:10px 12px; border-radius:12px; border:1px solid #223049; background:#0f1320; color:var(--text); font-size:1rem; outline:none; }
+    .num-input:focus{ border-color: var(--brand-strong); }
+    .output-pill{ display:inline-block; padding:10px 14px; border-radius:999px; background:#121621; border:1px solid #232a3a; font-weight:700; }
+
+    /* Small button variant + about row */
+    .btn-sm{ min-width:auto; padding:6px 10px; font-size:.85rem; border-radius:10px; }
+    .about-row{ display:flex; justify-content:flex-end; margin-top:10px; }
+
+    /* ===== Center PLAY overlay ===== */
+    .play-overlay{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      border:0; background: radial-gradient(circle at center, rgba(0,0,0,.35), rgba(0,0,0,.55));
+      cursor:pointer; z-index:10;
+    }
+    .play-overlay:focus{ outline:2px solid rgba(255,255,255,.45); outline-offset:2px; }
+    .play-overlay.hidden{ display:none; }
+
+    .play-overlay .circle{
+      width:96px; height:96px; border-radius:9999px;
+      background: rgba(15,20,35,.6);
+      border:2px solid rgba(255,255,255,.6);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      backdrop-filter: blur(1px);
+    }
+    .play-overlay .triangle{
+      width:0; height:0;
+      border-left:28px solid #ffffff;
+      border-top:16px solid transparent;
+      border-bottom:16px solid transparent;
+      transform: translateX(2px);
+    }
+
+    /* Keep drag mask above overlay when dragging */
+    .drop-mask{ z-index:20; }
+
+    /* ===== About dialog ===== */
+    dialog.about{
+      border: 1px solid #222836;
+      border-radius: 14px;
+      padding: 0;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      width: min(520px, 92vw);
+    }
+    .about__header{
+      padding: 16px;
+      border-bottom: 1px solid #222836;
+      font-weight: 800;
+      letter-spacing: .3px;
+    }
+    .about__body{
+      padding: 16px;
+      line-height: 1.6;
+    }
+    .about__footer{
+      padding: 12px 16px 16px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .about__link{
+      color: var(--brand);
+      text-decoration: underline;
+      word-break: break-all;
+    }
+    .about::backdrop{
+      background: rgba(0,0,0,.55);
+    }
+
+    /* ===== Stylized info block under the hyperlink ===== */
+    .about__lead{
+      margin: 14px 0 8px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: .2px;
+    }
+    .about__sub{
+      margin: 4px 0 14px;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+    .about__sectionTitle{
+      margin: 10px 0 8px;
+      font-weight: 800;
+      font-size: .95rem;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: #cfe0ff;
+    }
+    .about__modes{
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .about__mode{
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px 14px;
+      align-items: start;
+      padding: 10px 12px;
+      border: 1px solid #222836;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+      border-radius: 12px;
+    }
+    .about__tag{
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #2b3a56;
+      background: #12182a;
+      font-weight: 800;
+      letter-spacing: .8px;
+      font-size: .8rem;
+      color: #dbe7ff;
+      white-space: nowrap;
+    }
+    .about__desc{
+      color: #d7def1;
+      font-size: .95rem;
+      line-height: 1.5;
+    }
+  
+    /* ===== Calculating spinner overlay ===== */
+    .calc-overlay{
+      position:absolute; inset:0;
+      display:none; align-items:center; justify-content:center;
+      background: radial-gradient(circle at center, rgba(0,0,0,.35), rgba(0,0,0,.55));
+      z-index:30;
+    }
+    .calc-overlay.show{ display:flex; }
+    .calc-spinner{
+      width:56px; height:56px;
+      border:4px solid rgba(255,255,255,.25);
+      border-top-color:#ffffff;
+      border-radius:50%;
+      animation: vt_spin 1s linear infinite;
+      box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    }
+    @keyframes vt_spin { to { transform: rotate(360deg); } }
+
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>VirtualTachometer</h1>
+
+    <!-- card_1 -->
+    <section class="card" aria-labelledby="card1-title">
+      <div id="card1-title" class="subtle" style="margin-bottom:8px">Type of measurement</div>
+      <div class="switch-row" role="radiogroup" aria-label="Measurement mode">
+        <label class="switch" aria-label="Distance">
+          <input type="radio" name="mode" value="distance" checked aria-checked="true" />
+          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+          <span class="label-text">Distance</span>
+        </label>
+        <label class="switch" aria-label="Diameter">
+          <input type="radio" name="mode" value="diameter" />
+          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+          <span class="label-text">Diameter</span>
+        </label>
+        <label class="switch" aria-label="Revolutions">
+          <input type="radio" name="mode" value="revolutions" />
+          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+          <span class="label-text">Revolutions</span>
+        </label>
+      </div>
+      <div id="typeFieldArea" class="field-row"></div>
+    </section>
+
+    <!-- card_2: video player -->
+    <section class="card video-card" aria-labelledby="card2-title">
+      <div id="card2-title" class="subtle" style="margin:0 0 10px">Video player</div>
+
+      <div class="video-shell" id="videoShell">
+        <video id="player" preload="metadata" playsinline></video>
+        <button id="playOverlay" class="play-overlay" aria-label="Select a video">
+          <span class="circle"><span class="triangle"></span></span>
+        </button>
+
+        <div class="drop-mask" id="dropMask">Drop your video file here</div>
+        <div class="video-hint" id="videoHint">Click or drop a video file (MP4/WebM/MOV) to load it. Controls are below.</div>
+              <div id="calcOverlay" class="calc-overlay" aria-live="polite" aria-label="Calculating FPS and frames">
+          <div class="calc-spinner"></div>
+        </div>
+
+      </div>
+
+      <input id="filePicker" type="file" accept="video/*" hidden />
+
+      <input id="progress" class="progress" type="range" min="0" max="100" value="0" aria-label="Progress bar" disabled />
+
+      <div class="controls" aria-label="Playback controls">
+        <button id="bwd" class="btn" disabled>⏪ BWD</button>
+        <button id="play" class="btn" disabled>▶︎ PLAY</button>
+        <button id="fwd" class="btn" disabled>⏩ FWD</button>
+      </div>
+      <div class="controls" aria-label="Auxiliary controls">
+        <button id="initial" class="btn" disabled>Initial</button>
+        <button id="calculate" class="btn" disabled>Calculate</button>
+        <button id="final" class="btn" disabled>Final</button>
+      </div>
+
+      <div class="marks" id="marksText">InitialTime: --:--:--- · FinalTime: --:--:---</div>
+      <div class="footnote" id="footnoteText">Hint: Space bar = Play/Pause · ←/→ = ±1 frame · Drag the bar to seek</div>
+    </section>
+
+    <!-- card_3 -->
+    <section class="card" aria-labelledby="card3-title">
+      <div id="card3-title" class="subtle" style="margin-bottom:8px">Time unit</div>
+      <div class="switch-row" role="radiogroup" aria-label="Time unit">
+        <label class="switch" aria-label="Seconds">
+          <input type="radio" name="timeunit" value="seg" checked aria-checked="true" />
+          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+          <span class="label-text">Sec</span>
+        </label>
+        <label class="switch" aria-label="Minutes">
+          <input type="radio" name="timeunit" value="min" />
+          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+          <span class="label-text">Min</span>
+        </label>
+        <label class="switch" aria-label="Hours">
+          <input type="radio" name="timeunit" value="hrs" />
+          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+          <span class="label-text">Hrs</span>
+        </label>
+      </div>
+
+      <div id="speedRow" class="field-row" style="margin-top:10px; display:flex; align-items:center; gap:8px">
+        <div id="speedLabel" class="subtle">LinearSpeed:</div>
+        <div id="speedValue" class="output-pill">--</div>
+      </div>
+
+      <div class="about-row">
+        <button id="aboutBtn" class="btn btn-sm" title="About">About</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- About dialog with clickable hyperlink and stylized text -->
+  <dialog id="aboutDialog" class="about">
+    <div class="about__header">About</div>
+    <div class="about__body">
+      <div><strong>VirtualTachometer V1.0 (HTML5)</strong></div>
+      <div>
+        <a class="about__link" href="https://github.com/FireRayo" target="_blank" rel="noopener noreferrer">
+          https://github.com/FireRayo
+        </a>
+      </div>
+
+      <!-- Stylized block inserted below hyperlink -->
+      <div class="about__lead">Linear and rotational speed meter from a video.</div>
+      <!-- Removed the sentence about selecting Google Chrome -->
+      <div class="about__sectionTitle">With 3 measurement modes:</div>
+
+      <ul class="about__modes">
+        <li class="about__mode">
+          <span class="about__tag">DISTANCE</span>
+          <span class="about__desc">Obtain the linear translation speed by measuring the time it takes to travel a fixed distance, which you decide.</span>
+        </li>
+        <li class="about__mode">
+          <span class="about__tag">DIAMETER</span>
+          <span class="about__desc">Obtain the linear translation speed by measuring the time it takes to make a turn, setting the diameter.</span>
+        </li>
+        <li class="about__mode">
+          <span class="about__tag">REVOLUTIONS</span>
+          <span class="about__desc">Obtain the rotational speed by measuring the time it takes to make a turn.</span>
+        </li>
+      </ul>
+    </div>
+    <div class="about__footer">
+      <button id="aboutOpenLink" class="btn btn-sm">Open Link</button>
+      <button id="aboutClose" class="btn btn-sm">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    const video = document.getElementById('player');
+    const shell = document.getElementById('videoShell');
+    const mask = document.getElementById('dropMask');
+    const hint = document.getElementById('videoHint');
+    const picker = document.getElementById('filePicker');
+    const progress = document.getElementById('progress');
+    const playBtn = document.getElementById('play');
+    const fwdBtn = document.getElementById('fwd');
+    const bwdBtn = document.getElementById('bwd');
+    const overlay = document.getElementById('playOverlay');
+    overlay?.addEventListener('click', (e)=>{ e.stopPropagation(); picker.click(); });
+
+    const initialBtn = document.getElementById('initial');
+    const calcBtn = document.getElementById('calculate');
+    const finalBtn = document.getElementById('final');
+
+    const calcOverlay = document.getElementById('calcOverlay');
+    function setCalcBusy(on){
+      if(on){ calcOverlay?.classList.add('show'); }
+      else { calcOverlay?.classList.remove('show'); }
+    }
+
+
+    // About dialog logic (clickable hyperlink)
+    const aboutBtn = document.getElementById('aboutBtn');
+    const aboutDlg = document.getElementById('aboutDialog');
+    const aboutClose = document.getElementById('aboutClose');
+    const aboutOpenLink = document.getElementById('aboutOpenLink');
+
+    aboutBtn?.addEventListener('click', ()=>{
+      // Open the dialog (contains a real hyperlink)
+      if (aboutDlg?.showModal) aboutDlg.showModal();
+    });
+    aboutClose?.addEventListener('click', ()=> aboutDlg?.close());
+    aboutOpenLink?.addEventListener('click', ()=>{
+      window.open('https://github.com/FireRayo', '_blank', 'noopener');
+    });
+    // close when clicking backdrop
+    aboutDlg?.addEventListener('click', (e)=>{
+      if (e.target === aboutDlg) aboutDlg.close();
+    });
+
+    const marksEl = document.getElementById('marksText');
+    function formatHMS(t){
+      if (!isFinite(t)) return 'N/A';
+      const totalMs = Math.floor(t*1000);
+      const mm = Math.floor(totalMs / 60000);
+      const ss = Math.floor((totalMs % 60000) / 1000);
+      const ms = totalMs % 1000;
+      const pad2 = (n)=> String(n).padStart(2,'0');
+      const pad3 = (n)=> String(n).padStart(3,'0');
+      return `${pad2(mm)}:${pad2(ss)}:${pad3(ms)}`;
+    }
+    function updateMarks(){
+      const it = (typeof window.InitialTime === 'number') ? formatHMS(window.InitialTime) : '--:--:---';
+      const ft = (typeof window.FinalTime === 'number') ? formatHMS(window.FinalTime) : '--:--:---';
+      const tt = (typeof window.TotalTime === 'number') ? formatHMS(window.TotalTime) : '--:--:---';
+      if (marksEl) marksEl.textContent = `InitialTime: ${it} · FinalTime: ${ft} · TotalTime: ${tt}`;
+    }
+    window.InitialTime = undefined;
+    window.FinalTime = undefined;
+    window.TotalTime = undefined;
+    updateMarks();
+    initialBtn?.addEventListener('click', ()=>{
+      if (!isFinite(video.currentTime)) return;
+      window.InitialTime = video.currentTime;
+      updateMarks();
+    });
+    finalBtn?.addEventListener('click', ()=>{
+      if (!isFinite(video.currentTime)) return;
+      window.FinalTime = video.currentTime;
+      updateMarks();
+    });
+
+    calcBtn?.addEventListener('click', ()=>{
+      const it = window.InitialTime;
+      const ft = window.FinalTime;
+      if (typeof it === 'number' && typeof ft === 'number' && ft > it) {
+        window.TotalTime = ft - it;
+        updateMarks();
+        updateLinearSpeed();
+      } else {
+        window.TotalTime = undefined;
+        updateMarks();
+        updateLinearSpeed();
+        alert('FinalTime > InitialTime');
+      }
+    });
+
+    // === LinearSpeed calculation (Distance mode) ===
+    const speedValueEl = document.getElementById('speedValue');
+    const speedLabelEl = document.getElementById('speedLabel');
+
+    function getTimeUnitFactor(){
+      const sel = document.querySelector('input[name="timeunit"]:checked');
+      const val = sel ? sel.value : 'seg';
+      if (val === 'min') return 60;
+      if (val === 'hrs') return 3600;
+      return 1; // seconds
+    }
+
+    function getTimeUnitSuffix(){
+      const sel = document.querySelector('input[name="timeunit"]:checked');
+      const val = sel ? sel.value : 'seg';
+      if (val === 'min') return '/min';
+      if (val === 'hrs') return '/h';
+      return '/s';
+    }
+
+    function updateLinearSpeed(){
+      try{
+        const modeEl = document.querySelector('input[name="mode"]:checked');
+        const mode = modeEl ? modeEl.value : 'distance';
+        const tt = (typeof window.TotalTime === 'number' && window.TotalTime > 0) ? window.TotalTime : null;
+
+        if (mode === 'revolutions'){
+          if (speedLabelEl) speedLabelEl.textContent = 'RotationalSpeed:';
+          if (tt != null){
+            const rpm = 60 / tt; // seconds per revolution
+            if (speedValueEl) speedValueEl.textContent = `${rpm.toFixed(3)} RPM`;
+          } else {
+            if (speedValueEl) speedValueEl.textContent = '--';
+          }
+          return;
+        }
+
+        // Distance or Diameter -> Linear speed
+        if (speedLabelEl) speedLabelEl.textContent = 'LinearSpeed:';
+
+        let dist = null;
+        let unit = '';
+
+        if (mode === 'distance'){
+          dist = (typeof window.InDistance === 'number') ? window.InDistance : null;
+          unit = (typeof window.InDistanceUnit === 'string') ? window.InDistanceUnit : '';
+        } else if (mode === 'diameter'){
+          const d = (typeof window.InDiameter === 'number') ? window.InDiameter : null;
+          dist = (d != null) ? (Math.PI * d) : null; // circumference = π * D
+          unit = (typeof window.InDiameterUnit === 'string') ? window.InDiameterUnit : '';
+        } else {
+          if (speedValueEl) speedValueEl.textContent = '--';
+          return;
+        }
+
+        if (tt != null && dist != null){
+          const factor = getTimeUnitFactor();            // seconds-> selected time unit
+          const v = (dist / tt) * factor;
+          const suf = getTimeUnitSuffix();               // '/s', '/min', '/h'
+          if (speedValueEl) speedValueEl.textContent = `${v.toFixed(3)} ${unit}${suf}`;
+        } else {
+          if (speedValueEl) speedValueEl.textContent = '--';
+        }
+      }catch(e){
+        if (speedValueEl) speedValueEl.textContent = '--';
+      }
+    }
+
+    // Recompute when time unit changes
+    document.querySelectorAll('input[name="timeunit"]').forEach(r=>{
+      r.addEventListener('change', ()=>{ updateLinearSpeed(); });
+    });
+
+    // Footnote + frame count state
+    const foot = document.getElementById('footnoteText');
+    const baseFootText = '←/→ = ±1 Frame';
+    let fpsEstimate = null;            // number (fps)
+    let totalFrameEstimate = null;     // number (frames)
+    let fpsPrecise = false;            // snapped to a standard rate
+
+    function refreshFootnote(){
+      if(!foot) return;
+      const fpsTxt = Number.isFinite(fpsEstimate) ? fpsEstimate.toFixed(2) : 'N/A';
+      const framesTxt = Number.isFinite(totalFrameEstimate) ? Math.round(totalFrameEstimate).toLocaleString() : 'N/A';
+      const fpsApprox = Number.isFinite(fpsEstimate) && !fpsPrecise ? ' (≈)' : '';
+      const framesApprox = Number.isFinite(totalFrameEstimate) && !fpsPrecise ? ' (≈)' : '';
+      
+      // current time in MM:SS:MS
+      let timeTxt = 'N/A';
+      if (isFinite(video.currentTime)) {
+        const totalMs = Math.floor(video.currentTime * 1000);
+        const mm = Math.floor(totalMs / 60000);
+        const ss = Math.floor((totalMs % 60000) / 1000);
+        const ms = totalMs % 1000;
+        const pad2 = (n)=> String(n).padStart(2,'0');
+        const pad3 = (n)=> String(n).padStart(3,'0');
+        timeTxt = `${pad2(mm)}:${pad2(ss)}:${pad3(ms)}`;
+      }
+      foot.textContent = `${baseFootText} · FPS${fpsApprox}: ${fpsTxt} · Total frames${framesApprox}: ${framesTxt} · Current frame: ${ (Number.isFinite(fpsEstimate) && isFinite(video.currentTime)) ? Math.max(0, Math.round(video.currentTime * fpsEstimate)).toLocaleString() : 'N/A' } · Time: ${timeTxt}`;
+    }
+    refreshFootnote();
+
+    // Utility: enable player UI when media is ready
+    function enablePlayerUI(on){
+      [playBtn, fwdBtn, bwdBtn, progress, initialBtn, calcBtn, finalBtn].forEach(el => el.disabled = !on);
+      if(on){ hint.textContent = 'Loaded. Use the controls to play.'; }
+    }
+
+    // Click to pick file
+    shell.addEventListener('click', () => picker.click());
+    picker.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if(file){
+        const url = URL.createObjectURL(file);
+        loadVideo(url);
+      }
+    });
+
+    // Drag & drop
+    ['dragenter','dragover'].forEach(evt => {
+      shell.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); shell.classList.add('drag'); });
+    });
+    ['dragleave','drop'].forEach(evt => {
+      shell.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); shell.classList.remove('drag'); });
+    });
+    shell.addEventListener('drop', (e)=>{
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if(file && file.type.startsWith('video/')){
+        const url = URL.createObjectURL(file);
+        loadVideo(url);
+      }
+    });
+
+    function loadVideo(src){
+      overlay?.classList.add('hidden');
+      video.src = src;
+      video.currentTime = 0;
+      video.load();
+      video.play().catch(()=>{});
+    }
+
+    // Update UI when metadata is ready
+    video.addEventListener('loadedmetadata', ()=>{
+      overlay?.classList.add('hidden');
+      enablePlayerUI(true);
+      updateProgressFromVideo();
+      updateEstimates();
+      refreshFootnote();
+    });
+
+    // Sync progress bar with playback
+    function updateProgressFromVideo(){
+      if (!isFinite(video.duration) || video.duration === 0) return;
+      const pct = (video.currentTime / video.duration) * 100;
+      progress.value = String(pct);
+      refreshFootnote();
+    }
+    video.addEventListener('timeupdate', updateProgressFromVideo);
+
+    // Seek by dragging the slider
+    progress.addEventListener('input', ()=>{
+      if (!isFinite(video.duration) || video.duration === 0) return;
+      const pct = parseFloat(progress.value)/100;
+      video.currentTime = video.duration * pct;
+    });
+
+    // Buttons (frame stepping)
+    function stepFrames(n=1){
+      const fps = Number.isFinite(fpsEstimate) ? fpsEstimate : 30;
+      const dt = 1 / fps;
+      const eps = Math.min(0.0005, dt/10);
+      const target = (video.currentTime || 0) + (n * dt) + (n > 0 ? eps : -eps);
+      video.pause();
+      const dur = video.duration || 0;
+      video.currentTime = Math.min(Math.max(target, 0), dur);
+      updateProgressFromVideo();
+    }
+
+    playBtn.addEventListener('click', ()=>{
+      if(video.paused) video.play(); else video.pause();
+    });
+    fwdBtn.addEventListener('click', ()=>{ stepFrames(+1); });
+    bwdBtn.addEventListener('click', ()=>{ stepFrames(-1); });
+
+    // Aux buttons dispatch
+    initialBtn?.addEventListener('click', ()=>{
+      document.dispatchEvent(new CustomEvent('vt:initial', {detail:{time: video.currentTime}}));
+    });
+    calcBtn?.addEventListener('click', ()=>{
+      document.dispatchEvent(new CustomEvent('vt:calculate', {detail:{time: video.currentTime}}));
+    });
+    finalBtn?.addEventListener('click', ()=>{
+      document.dispatchEvent(new CustomEvent('vt:final', {detail:{time: video.currentTime}}));
+    });
+
+    // Reflect play/pause state on button text
+    video.addEventListener('play', ()=>{ playBtn.textContent = '⏸︎ PAUSE'; if(fpsEstimate==null){ updateEstimates(); } });
+    video.addEventListener('pause', ()=>{ playBtn.textContent = '▶︎ PLAY'; });
+
+    // Keyboard shortcuts while focus is within the document
+    window.addEventListener('keydown', (e)=>{
+      if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if(e.code === 'Space'){ e.preventDefault(); playBtn.click(); }
+      if(e.code === 'ArrowRight'){ e.preventDefault(); fwdBtn.click(); }
+      if(e.code === 'ArrowLeft'){ e.preventDefault(); bwdBtn.click(); }
+    });
+
+    // ARIA reflection for radios
+    document.querySelectorAll('input[type="radio"]').forEach(r => {
+      r.addEventListener('change', ()=>{
+        const group = document.querySelectorAll(`input[name="${r.name}"]`);
+        group.forEach(x => x.setAttribute('aria-checked', String(x.checked)));
+      });
+    });
+
+    // === Dynamic field logic for card_1 ===
+    const fieldArea = document.getElementById('typeFieldArea');
+    window.InDistance = null;
+    window.InDiameter = null;
+
+    function renderTypeInput(){
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      fieldArea.innerHTML = '';
+      if(mode === 'distance'){
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.flexDirection = 'column';
+        wrap.style.alignItems = 'center';
+
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.min = '0';
+        inp.step = 'any';
+        inp.inputMode = 'decimal';
+        inp.placeholder = 'Enter distance';
+        inp.className = 'num-input';
+        inp.addEventListener('input', ()=>{
+          const v = parseFloat(inp.value);
+          window.InDistance = (Number.isFinite(v) && v >= 0) ? v : null;
+        });
+        wrap.appendChild(inp);
+
+        const sel = document.createElement('select');
+        sel.className = 'num-input';
+        sel.setAttribute('aria-label','Distance unit');
+        const units = ['mm','cm','m','km','in','ft','yd','mi'];
+        units.forEach(u=>{
+          const opt = document.createElement('option');
+          opt.value = u; opt.textContent = u;
+          sel.appendChild(opt);
+        });
+        sel.value = 'mm';
+        window.InDistanceUnit = sel.value;
+        sel.addEventListener('change', ()=>{ window.InDistanceUnit = sel.value; updateLinearSpeed(); });
+        wrap.appendChild(sel);
+
+        fieldArea.appendChild(wrap);
+      } else if (mode === 'diameter'){
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.flexDirection = 'column';
+        wrap.style.alignItems = 'center';
+
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.min = '0';
+        inp.step = 'any';
+        inp.inputMode = 'decimal';
+        inp.placeholder = 'Enter diameter';
+        inp.className = 'num-input';
+        inp.addEventListener('input', ()=>{
+          const v = parseFloat(inp.value);
+          window.InDiameter = (Number.isFinite(v) && v >= 0) ? v : null;
+        });
+        wrap.appendChild(inp);
+
+        const sel = document.createElement('select');
+        sel.className = 'num-input';
+        sel.setAttribute('aria-label','Diameter unit');
+        const units = ['mm','cm','m','km','in','ft','yd','mi'];
+        units.forEach(u=>{
+          const opt = document.createElement('option');
+          opt.value = u; opt.textContent = u;
+          sel.appendChild(opt);
+        });
+        sel.value = 'mm';
+        window.InDiameterUnit = sel.value;
+        sel.addEventListener('change', ()=>{ window.InDiameterUnit = sel.value; updateLinearSpeed(); });
+        wrap.appendChild(sel);
+
+        fieldArea.appendChild(wrap);
+      } else {
+        const out = document.createElement('output');
+        out.className = 'output-pill';
+        out.textContent = 'One Revolution Measurement';
+        fieldArea.appendChild(out);
+      }
+    }
+
+    // re-render on mode change + reflect ARIA
+    document.querySelectorAll('input[name="mode"]').forEach(radio=>{
+      radio.addEventListener('change', ()=>{
+        const group = document.querySelectorAll('input[name="mode"]');
+        group.forEach(x => x.setAttribute('aria-checked', String(x.checked)));
+        renderTypeInput();
+        updateLinearSpeed();
+      });
+    });
+
+    // initial render
+    renderTypeInput();
+    updateLinearSpeed(); // init
+
+    // === Precise-ish FPS & total frames estimation ===
+    function snapToStdRates(fps){
+      const std = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60];
+      for(const r of std){ if(Math.abs(fps - r) < 0.02) return {value:r, snapped:true}; }
+      return {value:fps, snapped:false};
+    }
+
+    async function measureViaRVFC(maxFrames=120, maxMs=1500){
+      const support = ('requestVideoFrameCallback' in HTMLVideoElement.prototype) || ('requestVideoFrameCallback' in video);
+      if(!support) return null;
+      return await new Promise((resolve)=>{
+        let diffs=[]; let first=null; let last=null; let id=null; let frames=0;
+        const cb=(now, meta)=>{
+          if(first==null){ first=now; last=now; }
+          else { diffs.push(now-last); last=now; frames++; }
+          if(frames>=maxFrames || (now-first)>=maxMs){
+            const good = diffs.filter(d=>d>0 && d<1000);
+            if(good.length<5){ resolve(null); return; }
+            good.sort((a,b)=>a-b);
+            const med = good[Math.floor(good.length/2)];
+            resolve({fps: 1000/med, samples: good.length});
+            return;
+          }
+          id = video.requestVideoFrameCallback(cb);
+        };
+        try{ id = video.requestVideoFrameCallback(cb); } catch(e){ resolve(null); }
+      });
+    }
+
+    async function measureViaPlaybackQuality(sampleMs=1500){
+      const getQ = video.getVideoPlaybackQuality ? ()=>video.getVideoPlaybackQuality() : null;
+      if(!getQ) return null;
+      return await new Promise((resolve)=>{
+        const q0 = getQ();
+        if(!q0 || typeof q0.totalVideoFrames !== 'number'){ resolve(null); return; }
+        const startFrames = q0.totalVideoFrames;
+        const t0 = performance.now();
+        setTimeout(()=>{
+          const q1 = getQ();
+          const frames = (q1 && typeof q1.totalVideoFrames === 'number') ? (q1.totalVideoFrames - startFrames) : 0;
+          const dt = performance.now() - t0;
+          if(frames<=0 || dt<=0){ resolve(null); return; }
+          resolve({fps: (frames * 1000) / dt, framesDelta: frames});
+        }, sampleMs);
+      });
+    }
+
+    async function updateEstimates(){
+      setCalcBusy(true);
+      try{
+      try{
+        const prevPaused = video.paused; const prevRate = video.playbackRate; const prevMuted = video.muted;
+        video.playbackRate = 1; video.muted = true; if(prevPaused){ await video.play().catch(()=>{}); }
+        const [r1, r2] = await Promise.all([ measureViaRVFC(120,1500), measureViaPlaybackQuality(1500) ]);
+        let fps = r1?.fps || r2?.fps || null;
+        fpsPrecise = false;
+        if(fps){
+          if(r1?.fps && r2?.fps && Math.abs(r1.fps - r2.fps) < 0.2){ fps = (r1.fps + r2.fps)/2; }
+          const snap = snapToStdRates(fps);
+          fps = snap.value; fpsPrecise = snap.snapped;
+          fpsEstimate = fps;
+          if(isFinite(video.duration)) totalFrameEstimate = fps * video.duration;
+        }
+        refreshFootnote();
+        video.playbackRate = prevRate; video.muted = prevMuted; if(prevPaused) video.pause();
+      }catch(e){ /* noop */ }
+      }catch(e){ /* noop */ }
+      finally{ setCalcBusy(false); }
+
+    }
+
+    video.addEventListener('ratechange', refreshFootnote);
+    video.addEventListener('durationchange', ()=>{ if(Number.isFinite(fpsEstimate)) { totalFrameEstimate = fpsEstimate * video.duration; refreshFootnote(); } });
+  </script>
+</body>
+</html>

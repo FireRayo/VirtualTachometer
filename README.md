@@ -14,6 +14,7 @@ Some example uses:
 - Measure the linear speed of package or bottle conveyors.
 - Measure rotational speed (RPM).
 - Measure the speed of roller conveyors by converting roller rotational speed into linear speed.
+- Measure linear and rotational speed based on the time it takes the object to travel a given distance.
 
 This project was created to solve `the need to measure speeds when you don’t have available a tachometer`, for example:
 
@@ -23,11 +24,12 @@ This project was created to solve `the need to measure speeds when you don’t h
 
 ## ✨ Features
 
-- ✅ It runs directly in the browser Chrome or Safari on any operating system (Windows, MacOS, Linux, Android, iOS).
+- ✅ It runs directly in the browser Chrome or Safari.
+- ✅ It runs on any operating system (Windows, MacOS, Linux, Android, iOS).
 - ✅ Simple HTML5/JavaScript interface.
-- ✅ No installation required, 
-- ✅ Calculates linear and rotational speed based on the time it takes the object to travel a given distance.
+- ✅ No installation required.
 - ✅ Support for different units (mm, cm, m, in, ft, etc.).
+- ✅ Calculates linear and rotational speed
 - ✅ Support for videos with FPS (30 and 60).
 
 

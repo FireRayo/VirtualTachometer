@@ -4,864 +4,257 @@
   <meta charset="utf-8" />
   <meta property="og:title" content="VirtualTachometer" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f1115" />
   <title>VirtualTachometer</title>
   <style>
     :root{
-      --bg: #0f1115;
-      --card: #161a22;
-      --muted: #8b94a7;
-      --text: #e8eefc;
-      --brand: #6aa7ff;
-      --brand-strong:#3f89ff;
-      --accent: #2a3244;
-      --shadow: 0 10px 25px rgba(0,0,0,.35);
-      --radius: 16px;
-      --btn-gap: 14px;
+      --bg:#0f1115; --card:#161a22; --muted:#8b94a7; --text:#e8eefc;
+      --brand:#6aa7ff; --brand-strong:#3f89ff; --border:#222836;
+      --danger:#ff9a9a; --danger-bg:#351a1e; --warn:#ffd58a; --warn-bg:#332919;
+      --ok:#a8e6b6; --ok-bg:#17301e; --shadow:0 10px 25px rgba(0,0,0,.35);
+      --radius:16px; --btn-gap:14px;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body{min-height:100%}
     body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background:linear-gradient(180deg, #0e1014 0%, #0b0d11 100%);
-      color:var(--text);
-      display:flex;justify-content:center;align-items:flex-start;
+      margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg,#0e1014 0%,#0b0d11 100%); color:var(--text);
+      display:flex; justify-content:center; align-items:flex-start;
     }
-    .wrap{width:min(1024px, 96vw); padding:32px 16px 64px}
+    .wrap{width:min(1080px,96vw);padding:26px 16px 64px}
+    .topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
     h1{
-      margin: 4px 0 20px;
-      font-weight:800; letter-spacing:.4px;
-      text-align:center;
-      font-size:clamp(24px, 3.6vw, 40px);
-      background:linear-gradient(90deg, #9fc5ff, #fff);
+      grid-column:2; margin:4px 0 18px; font-weight:800; letter-spacing:.4px; text-align:center;
+      font-size:clamp(24px,3.6vw,40px); background:linear-gradient(90deg,#9fc5ff,#fff);
       -webkit-background-clip:text; background-clip:text; color:transparent;
-      text-shadow: 0 1px 0 rgba(255,255,255,.08);
+      text-shadow:0 1px 0 rgba(255,255,255,.08);
     }
-
-    .card{ background:var(--card); border:1px solid #222836; border-radius: var(--radius);
-      box-shadow:var(--shadow); padding:18px; margin:14px 0; }
-
-    /* Horizontal switch groups */
-    .switch-row{display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center}
-
-    /* Accessible radio-as-switch */
-    .switch{
-      display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
-      padding:10px 12px; border-radius:12px; background: #121621; border:1px solid #232a3a;
-      transition: transform .08s ease, border-color .2s ease, background .2s ease;
-    }
-    .switch:hover{ transform: translateY(-1px); }
-    .switch:active{ transform: translateY(0); }
-    .switch input{ position:absolute; opacity:0; pointer-events:none; }
-
-    /* visual toggle */
-    .slider{ position:relative; width:48px; height:26px; background:#20283a; border-radius:999px; box-shadow: inset 0 1px 3px rgba(0,0,0,.4); }
-    .knob{ position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background: #c9d8ff; box-shadow:0 2px 5px rgba(0,0,0,.35); transition:left .18s ease, background .18s ease; }
-
-    /* checked state */
-    .switch input:checked + .slider{ background: linear-gradient(90deg, var(--brand) 0%, var(--brand-strong) 100%); }
-    .switch input:checked + .slider .knob{ left:24px; background:#fff; }
-
-    .label-text{ font-weight:600; letter-spacing:.2px; color:var(--text); }
-    .subtle{ color:var(--muted); font-size:.92rem; }
-
-    /* Video area */
-    .video-card{ padding:16px 16px 20px }
-    .video-shell{ position:relative; background:#0c1019; border:1px solid #20283a; border-radius:14px; overflow:hidden; }
-    video{ display:block; width:100%; max-height:62vh; background:#0b0e15; }
-
-    /* Drop overlay */
-    .drop-mask{ position:absolute; inset:0; display:none; place-items:center; text-align:center;
-      background:rgba(50,90,255,.1); border:3px dashed rgba(110,150,255,.45); color:#cfe0ff; font-weight:700; font-size:clamp(14px,2.5vw,18px);
-    }
-    .video-shell.drag .drop-mask{ display:grid; }
-    .video-hint{ position:absolute; inset:auto 12px 12px 12px; color:#a9b5cf; font-size:.95rem; }
-
-    /* Progress */
-    .progress{ width:100%; appearance:none; height:8px; border-radius:999px; background:#1a2131; margin:12px 0 10px; outline:none;
-      box-shadow: inset 0 0 0 1px #232b3f;
-    }
-    .progress::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow: 0 0 0 4px rgba(90,140,255,.35); border:none; cursor:pointer; }
-    .progress::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:#fff; border:none; box-shadow: 0 0 0 4px rgba(90,140,255,.35); cursor:pointer; }
-
-    /* Controls */
-    .controls{ display:flex; gap: var(--btn-gap); justify-content:center; }
-    .controls + .controls{margin-top: var(--btn-gap);}
-    .btn{ padding:14px 20px; border-radius:12px; border:1px solid #223049; background:linear-gradient(180deg,#1b2334,#151b29); color:#eaf2ff; font-weight:700; letter-spacing:.4px;
-      box-shadow:var(--shadow); cursor:pointer; min-width:100px; text-align:center; transition: transform .08s ease, background .18s ease, border-color .18s ease;
-    }
-    .btn:disabled{ opacity:.5; cursor:not-allowed; }
-    .btn:hover:not(:disabled){ transform: translateY(-1px); border-color:#2b4270; background:linear-gradient(180deg,#243150,#1b2436) }
-    .btn:active:not(:disabled){ transform: translateY(0) }
-
-    /* Footer row inside card for small notes */
-    .footnote{ margin-top:6px; color:var(--muted); font-size:.9rem; text-align:center; }
-    .marks{ margin-top:6px; font-size:.95rem; text-align:center; }
-
-    @media (max-width:540px){
-      .btn{ min-width:88px; padding:10px 12px }
-      .switch-row{ gap:12px }
-    }
-
-    /* Dynamic field for card_1 */
-    .field-row{display:flex; justify-content:center; margin-top:12px}
-    .num-input{ width:min(320px, 92%); padding:10px 12px; border-radius:12px; border:1px solid #223049; background:#0f1320; color:var(--text); font-size:1rem; outline:none; }
-    .num-input:focus{ border-color: var(--brand-strong); }
-    .output-pill{ display:inline-block; padding:10px 14px; border-radius:999px; background:#121621; border:1px solid #232a3a; font-weight:700; }
-
-    /* Small button variant + about row */
-    .btn-sm{ min-width:auto; padding:6px 10px; font-size:.85rem; border-radius:10px; }
-    .about-row{ display:flex; justify-content:flex-end; margin-top:10px; }
-
-    /* ===== Center PLAY overlay ===== */
-    .play-overlay{
-      position:absolute; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      border:0; background: radial-gradient(circle at center, rgba(0,0,0,.35), rgba(0,0,0,.55));
-      cursor:pointer; z-index:10;
-    }
-    .play-overlay:focus{ outline:2px solid rgba(255,255,255,.45); outline-offset:2px; }
-    .play-overlay.hidden{ display:none; }
-
-    .play-overlay .circle{
-      width:96px; height:96px; border-radius:9999px;
-      background: rgba(15,20,35,.6);
-      border:2px solid rgba(255,255,255,.6);
-      display:flex; align-items:center; justify-content:center;
-      box-shadow: 0 8px 24px rgba(0,0,0,.5);
-      backdrop-filter: blur(1px);
-    }
-    .play-overlay .triangle{
-      width:0; height:0;
-      border-left:28px solid #ffffff;
-      border-top:16px solid transparent;
-      border-bottom:16px solid transparent;
-      transform: translateX(2px);
-    }
-
-    /* Keep drag mask above overlay when dragging */
-    .drop-mask{ z-index:20; }
-
-    /* ===== About dialog ===== */
-    dialog.about{
-      border: 1px solid #222836;
-      border-radius: 14px;
-      padding: 0;
-      background: var(--card);
-      color: var(--text);
-      box-shadow: var(--shadow);
-      width: min(520px, 92vw);
-    }
-    .about__header{
-      padding: 16px;
-      border-bottom: 1px solid #222836;
-      font-weight: 800;
-      letter-spacing: .3px;
-    }
-    .about__body{
-      padding: 16px;
-      line-height: 1.6;
-    }
-    .about__footer{
-      padding: 12px 16px 16px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-    .about__link{
-      color: var(--brand);
-      text-decoration: underline;
-      word-break: break-all;
-    }
-    .about::backdrop{
-      background: rgba(0,0,0,.55);
-    }
-
-    /* ===== Stylized info block under the hyperlink ===== */
-    .about__lead{
-      margin: 14px 0 8px;
-      font-weight: 700;
-      font-size: 1.05rem;
-      letter-spacing: .2px;
-    }
-    .about__sub{
-      margin: 4px 0 14px;
-      color: var(--muted);
-      font-size: .95rem;
-    }
-    .about__sectionTitle{
-      margin: 10px 0 8px;
-      font-weight: 800;
-      font-size: .95rem;
-      text-transform: uppercase;
-      letter-spacing: .8px;
-      color: #cfe0ff;
-    }
-    .about__modes{
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-    .about__mode{
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 10px 14px;
-      align-items: start;
-      padding: 10px 12px;
-      border: 1px solid #222836;
-      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
-      border-radius: 12px;
-    }
-    .about__tag{
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid #2b3a56;
-      background: #12182a;
-      font-weight: 800;
-      letter-spacing: .8px;
-      font-size: .8rem;
-      color: #dbe7ff;
-      white-space: nowrap;
-    }
-    .about__desc{
-      color: #d7def1;
-      font-size: .95rem;
-      line-height: 1.5;
-    }
-  
-    /* ===== Calculating spinner overlay ===== */
-    .calc-overlay{
-      position:absolute; inset:0;
-      display:none; align-items:center; justify-content:center;
-      background: radial-gradient(circle at center, rgba(0,0,0,.35), rgba(0,0,0,.55));
-      z-index:30;
-    }
-    .calc-overlay.show{ display:flex; }
-    .calc-spinner{
-      width:56px; height:56px;
-      border:4px solid rgba(255,255,255,.25);
-      border-top-color:#ffffff;
-      border-radius:50%;
-      animation: vt_spin 1s linear infinite;
-      box-shadow: 0 8px 24px rgba(0,0,0,.45);
-    }
-    @keyframes vt_spin { to { transform: rotate(360deg); } }
-
+    .language-wrap{grid-column:3;justify-self:end;align-self:start;margin-top:3px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin:14px 0}
+    .subtle{color:var(--muted);font-size:.92rem}
+    .switch-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .switch{display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:10px 12px;border-radius:12px;background:#121621;border:1px solid #232a3a;transition:transform .08s ease,border-color .2s ease,background .2s ease}
+    .switch:hover{transform:translateY(-1px)} .switch:active{transform:translateY(0)}
+    .switch input{position:absolute;opacity:0;pointer-events:none}
+    .slider{position:relative;width:48px;height:26px;background:#20283a;border-radius:999px;box-shadow:inset 0 1px 3px rgba(0,0,0,.4)}
+    .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#c9d8ff;box-shadow:0 2px 5px rgba(0,0,0,.35);transition:left .18s ease,background .18s ease}
+    .switch input:checked + .slider{background:linear-gradient(90deg,var(--brand) 0%,var(--brand-strong) 100%)}
+    .switch input:checked + .slider .knob{left:24px;background:#fff}
+    .label-text{font-weight:600;letter-spacing:.2px;color:var(--text)}
+    .field-row{display:flex;justify-content:center;margin-top:12px}
+    .input-stack{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(360px,100%)}
+    .input-line{display:flex;gap:8px;width:100%}
+    .num-input,.select-input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #223049;background:#0f1320;color:var(--text);font-size:1rem;outline:none}
+    .num-input:focus,.select-input:focus{border-color:var(--brand-strong)}
+    .select-input{cursor:pointer}
+    .hidden{display:none !important}
+    .video-card{padding:16px 16px 20px}
+    .video-shell{position:relative;background:#0c1019;border:1px solid #20283a;border-radius:14px;overflow:hidden;min-height:180px}
+    video{display:block;width:100%;max-height:62vh;background:#0b0e15}
+    .drop-mask{position:absolute;inset:0;display:none;place-items:center;text-align:center;background:rgba(50,90,255,.1);border:3px dashed rgba(110,150,255,.45);color:#cfe0ff;font-weight:700;font-size:clamp(14px,2.5vw,18px);z-index:20}
+    .video-shell.drag .drop-mask{display:grid}
+    .video-hint{position:absolute;inset:auto 12px 12px 12px;color:#a9b5cf;font-size:.95rem;pointer-events:none;text-shadow:0 1px 2px #000}
+    .play-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border:0;background:radial-gradient(circle at center,rgba(0,0,0,.35),rgba(0,0,0,.55));cursor:pointer;z-index:10}
+    .play-overlay.hidden{display:none}
+    .play-overlay .circle{width:96px;height:96px;border-radius:9999px;background:rgba(15,20,35,.6);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+    .play-overlay .triangle{width:0;height:0;border-left:28px solid #fff;border-top:16px solid transparent;border-bottom:16px solid transparent;transform:translateX(2px)}
+    .progress{width:100%;appearance:none;height:8px;border-radius:999px;background:#1a2131;margin:12px 0 10px;outline:none;box-shadow:inset 0 0 0 1px #232b3f}
+    .progress::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(90,140,255,.35);border:none;cursor:pointer}
+    .progress::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:none;box-shadow:0 0 0 4px rgba(90,140,255,.35);cursor:pointer}
+    .controls{display:flex;gap:var(--btn-gap);justify-content:center;flex-wrap:wrap}
+    .controls + .controls{margin-top:var(--btn-gap)}
+    .btn{padding:14px 20px;border-radius:12px;border:1px solid #223049;background:linear-gradient(180deg,#1b2334,#151b29);color:#eaf2ff;font-weight:700;letter-spacing:.4px;box-shadow:var(--shadow);cursor:pointer;min-width:100px;text-align:center;transition:transform .08s ease,background .18s ease,border-color .18s ease}
+    .btn:disabled{opacity:.5;cursor:not-allowed}.btn:hover:not(:disabled){transform:translateY(-1px);border-color:#2b4270;background:linear-gradient(180deg,#243150,#1b2436)}.btn:active:not(:disabled){transform:translateY(0)}
+    .btn-sm{min-width:auto;padding:7px 11px;font-size:.85rem;border-radius:10px;box-shadow:none}
+    .fps-panel{margin:12px auto 2px;display:grid;grid-template-columns:minmax(110px,1fr) minmax(95px,130px) auto;gap:8px;align-items:center;max-width:560px}
+    .fps-panel .num-input{min-width:0}
+    .fps-source{grid-column:1/-1;text-align:center;color:var(--muted);font-size:.88rem}
+    .marks{margin-top:8px;font-size:.95rem;text-align:center;line-height:1.5}
+    .footnote{margin-top:7px;color:var(--muted);font-size:.9rem;text-align:center;line-height:1.45}
+    .status{max-width:760px;margin:12px auto 0;padding:10px 12px;border-radius:10px;border:1px solid #2b3a56;background:#12182a;color:#dbe7ff;font-size:.92rem;line-height:1.4}
+    .status.error{border-color:#6a343a;background:var(--danger-bg);color:var(--danger)}
+    .status.warn{border-color:#65512d;background:var(--warn-bg);color:var(--warn)}
+    .status.ok{border-color:#315a39;background:var(--ok-bg);color:var(--ok)}
+    .output-pill{display:inline-block;padding:10px 14px;border-radius:999px;background:#121621;border:1px solid #232a3a;font-weight:700}
+    .uncertainty{margin-top:10px;text-align:center;color:var(--muted);font-size:.9rem;line-height:1.45}
+    .about-row{display:flex;justify-content:flex-end;margin-top:10px}
+    dialog.about{border:1px solid var(--border);border-radius:14px;padding:0;background:var(--card);color:var(--text);box-shadow:var(--shadow);width:min(620px,92vw)}
+    .about__header{padding:16px;border-bottom:1px solid var(--border);font-weight:800;letter-spacing:.3px}.about__body{padding:16px;line-height:1.6}.about__footer{padding:12px 16px 16px;display:flex;justify-content:flex-end;gap:8px}.about__link{color:var(--brand);text-decoration:underline;word-break:break-all}.about::backdrop{background:rgba(0,0,0,.55)}
+    .calc-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at center,rgba(0,0,0,.35),rgba(0,0,0,.62));z-index:30}.calc-overlay.show{display:flex}.calc-spinner{width:56px;height:56px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:vt_spin 1s linear infinite;box-shadow:0 8px 24px rgba(0,0,0,.45)}@keyframes vt_spin{to{transform:rotate(360deg)}}
+    @media(max-width:620px){.topbar{grid-template-columns:1fr auto}.topbar h1{grid-column:1;margin-left:40px}.language-wrap{grid-column:2}.btn{min-width:88px;padding:10px 12px}.switch-row{gap:10px}.fps-panel{grid-template-columns:1fr 105px}.fps-panel .btn{grid-column:1/-1}.input-line{flex-direction:column}}
   </style>
 </head>
 <body>
   <main class="wrap">
-    <h1>VirtualTachometer</h1>
-
-    <!-- card_1 -->
-    <section class="card" aria-labelledby="card1-title">
-      <div id="card1-title" class="subtle" style="margin-bottom:8px">Type of measurement</div>
-      <div class="switch-row" role="radiogroup" aria-label="Measurement mode">
-        <label class="switch" aria-label="Distance">
-          <input type="radio" name="mode" value="distance" checked aria-checked="true" />
-          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
-          <span class="label-text">Distance</span>
-        </label>
-        <label class="switch" aria-label="Diameter">
-          <input type="radio" name="mode" value="diameter" />
-          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
-          <span class="label-text">Diameter</span>
-        </label>
-        <label class="switch" aria-label="Revolutions">
-          <input type="radio" name="mode" value="revolutions" />
-          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
-          <span class="label-text">Revolutions</span>
-        </label>
+    <div class="topbar">
+      <h1>VirtualTachometer</h1>
+      <div class="language-wrap">
+        <select id="languageSelect" class="select-input" aria-label="Language" data-i18n-aria-label="language"><option value="en">English</option><option value="es">Español</option><option value="it">Italiano</option></select>
       </div>
-      <div id="typeFieldArea" class="field-row"></div>
+    </div>
+
+    <section class="card" aria-labelledby="card1-title">
+      <div id="card1-title" class="subtle" style="margin-bottom:8px" data-i18n="measurementType">Type of measurement</div>
+      <div class="switch-row" role="radiogroup" aria-label="Measurement mode" data-i18n-aria-label="measurementMode">
+        <label class="switch"><input type="radio" name="mode" value="distance" checked /><span class="slider"><span class="knob"></span></span><span class="label-text" data-i18n="distance">Distance</span></label>
+        <label class="switch"><input type="radio" name="mode" value="diameter" /><span class="slider"><span class="knob"></span></span><span class="label-text" data-i18n="diameter">Diameter</span></label>
+        <label class="switch"><input type="radio" name="mode" value="revolutions" /><span class="slider"><span class="knob"></span></span><span class="label-text" data-i18n="revolutions">Revolutions</span></label>
+      </div>
+      <div class="field-row">
+        <div id="distanceFields" class="input-stack mode-fields"><div class="input-line"><input id="distanceInput" class="num-input" type="number" min="0" step="any" inputmode="decimal" placeholder="Enter distance" data-i18n-placeholder="enterDistance" /><select id="distanceUnit" class="select-input" aria-label="Distance unit" data-i18n-aria-label="distanceUnitLabel"></select></div></div>
+        <div id="diameterFields" class="input-stack mode-fields hidden"><div class="input-line"><input id="diameterInput" class="num-input" type="number" min="0" step="any" inputmode="decimal" placeholder="Enter diameter" data-i18n-placeholder="enterDiameter" /><select id="diameterUnit" class="select-input" aria-label="Diameter unit" data-i18n-aria-label="diameterUnitLabel"></select></div></div>
+        <div id="revolutionFields" class="input-stack mode-fields hidden"><label class="subtle" for="revolutionCount" data-i18n="observedRevolutions">Observed revolutions</label><input id="revolutionCount" class="num-input" type="number" min="1" step="1" inputmode="numeric" value="1" /></div>
+      </div>
     </section>
 
-    <!-- card_2: video player -->
     <section class="card video-card" aria-labelledby="card2-title">
-      <div id="card2-title" class="subtle" style="margin:0 0 10px">Video player</div>
-
+      <div id="card2-title" class="subtle" style="margin:0 0 10px" data-i18n="videoPlayer">Video player</div>
       <div class="video-shell" id="videoShell">
         <video id="player" preload="metadata" playsinline></video>
-        <button id="playOverlay" class="play-overlay" aria-label="Select a video">
-          <span class="circle"><span class="triangle"></span></span>
-        </button>
-
-        <div class="drop-mask" id="dropMask">Drop your video file here</div>
-        <div class="video-hint" id="videoHint">Click or drop a video file (MP4/WebM/MOV) to load it. Controls are below.</div>
-              <div id="calcOverlay" class="calc-overlay" aria-live="polite" aria-label="Calculating FPS and frames">
-          <div class="calc-spinner"></div>
-        </div>
-
+        <button id="playOverlay" class="play-overlay" aria-label="Select a video" data-i18n-aria-label="selectVideo"><span class="circle"><span class="triangle"></span></span></button>
+        <div class="drop-mask" id="dropMask" data-i18n="dropVideo">Drop your video file here</div>
+        <div class="video-hint" id="videoHint" data-i18n="videoHint">Click the play icon or drop a video file here.</div>
+        <div id="calcOverlay" class="calc-overlay" aria-live="polite" aria-label="Working" data-i18n-aria-label="working"><div class="calc-spinner"></div></div>
       </div>
-
-      <input id="filePicker" type="file" accept="video/*" hidden />
-
-      <input id="progress" class="progress" type="range" min="0" max="100" value="0" aria-label="Progress bar" disabled />
-
-      <div class="controls" aria-label="Playback controls">
-        <button id="bwd" class="btn" disabled>⏪ BWD</button>
-        <button id="play" class="btn" disabled>▶︎ PLAY</button>
-        <button id="fwd" class="btn" disabled>⏩ FWD</button>
-      </div>
-      <div class="controls" aria-label="Auxiliary controls">
-        <button id="initial" class="btn" disabled>Initial</button>
-        <button id="calculate" class="btn" disabled>Calculate</button>
-        <button id="final" class="btn" disabled>Final</button>
-      </div>
-
-      <div class="marks" id="marksText">InitialTime: --:--:--- · FinalTime: --:--:---</div>
-      <div class="footnote" id="footnoteText">Hint: Space bar = Play/Pause · ←/→ = ±1 frame · Drag the bar to seek</div>
+      <input id="filePicker" type="file" accept="video/*,.mp4,.m4v,.mov,.webm" hidden />
+      <input id="progress" class="progress" type="range" min="0" max="1000" value="0" aria-label="Progress bar" data-i18n-aria-label="progressBar" disabled />
+      <div class="controls"><button id="openVideo" class="btn" data-i18n="openVideo">Open video</button></div>
+      <div class="controls"><button id="bwd" class="btn" disabled data-i18n="backward">⏪ BWD</button><button id="play" class="btn" disabled data-i18n="play">▶︎ PLAY</button><button id="fwd" class="btn" disabled data-i18n="forward">⏩ FWD</button></div>
+      <div class="controls"><button id="initial" class="btn" disabled data-i18n="initial">Initial</button><button id="calculate" class="btn" disabled data-i18n="calculate">Calculate</button><button id="final" class="btn" disabled data-i18n="final">Final</button></div>
+      <div class="fps-panel" aria-label="Frame rate controls" data-i18n-aria-label="frameRateControls"><label class="subtle" for="fpsInput" data-i18n="frameRate">Frame rate (FPS)</label><input id="fpsInput" class="num-input" type="number" min="1" max="1000" step="0.001" inputmode="decimal" placeholder="FPS" disabled /><button id="calibrateFps" class="btn btn-sm" disabled data-i18n="calibrateFps">Calibrate FPS</button><div id="fpsSource" class="fps-source">FPS: N/A</div></div>
+      <div class="marks" id="marksText">InitialTime: --:--:--- · FinalTime: --:--:--- · TotalTime: --:--:---</div>
+      <div class="footnote" id="footnoteText">←/→ = ±1 Frame · FPS: N/A · Current frame: N/A · Time: N/A</div>
+      <div id="statusMessage" class="status hidden" role="status" aria-live="polite"></div>
     </section>
 
-    <!-- card_3 -->
     <section class="card" aria-labelledby="card3-title">
-      <div id="card3-title" class="subtle" style="margin-bottom:8px">Time unit</div>
-      <div class="switch-row" role="radiogroup" aria-label="Time unit">
-        <label class="switch" aria-label="Seconds">
-          <input type="radio" name="timeunit" value="seg" checked aria-checked="true" />
-          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
-          <span class="label-text">Sec</span>
-        </label>
-        <label class="switch" aria-label="Minutes">
-          <input type="radio" name="timeunit" value="min" />
-          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
-          <span class="label-text">Min</span>
-        </label>
-        <label class="switch" aria-label="Hours">
-          <input type="radio" name="timeunit" value="hrs" />
-          <span class="slider" aria-hidden="true"><span class="knob"></span></span>
-          <span class="label-text">Hrs</span>
-        </label>
+      <div id="card3-title" class="subtle" style="margin-bottom:8px" data-i18n="timeUnit">Time unit</div>
+      <div class="switch-row" role="radiogroup" aria-label="Time unit" data-i18n-aria-label="timeUnitGroup">
+        <label class="switch"><input type="radio" name="timeunit" value="seg" checked /><span class="slider"><span class="knob"></span></span><span class="label-text" data-i18n="sec">Sec</span></label>
+        <label class="switch"><input type="radio" name="timeunit" value="min" /><span class="slider"><span class="knob"></span></span><span class="label-text" data-i18n="min">Min</span></label>
+        <label class="switch"><input type="radio" name="timeunit" value="hrs" /><span class="slider"><span class="knob"></span></span><span class="label-text" data-i18n="hrs">Hrs</span></label>
       </div>
-
-      <div id="speedRow" class="field-row" style="margin-top:10px; display:flex; align-items:center; gap:8px">
-        <div id="speedLabel" class="subtle">LinearSpeed:</div>
-        <div id="speedValue" class="output-pill">--</div>
-      </div>
-
-      <div class="about-row">
-        <button id="aboutBtn" class="btn btn-sm" title="About">About</button>
-      </div>
+      <div class="field-row" style="margin-top:10px;display:flex;align-items:center;gap:8px"><div id="speedLabel" class="subtle" data-i18n="linearSpeed">Linear speed:</div><div id="speedValue" class="output-pill">--</div></div>
+      <div id="uncertaintyText" class="uncertainty" data-i18n="uncertaintyUnavailable">Uncertainty: available after a valid FPS and time interval are set.</div>
+      <div class="about-row"><button id="aboutBtn" class="btn btn-sm" data-i18n="about">About</button></div>
     </section>
   </main>
 
-  <!-- About dialog with clickable hyperlink and stylized text -->
   <dialog id="aboutDialog" class="about">
-    <div class="about__header">About</div>
-    <div class="about__body">
-      <div><strong>VirtualTachometer V1.0 (HTML5)</strong></div>
-      <div>
-        <a class="about__link" href="https://github.com/FireRayo" target="_blank" rel="noopener noreferrer">
-          https://github.com/FireRayo
-        </a>
-      </div>
-
-      <!-- Stylized block inserted below hyperlink -->
-      <div class="about__lead">Linear and rotational speed meter from a video.</div>
-      <!-- Removed the sentence about selecting Google Chrome -->
-      <div class="about__sectionTitle">With 3 measurement modes:</div>
-
-      <ul class="about__modes">
-        <li class="about__mode">
-          <span class="about__tag">DISTANCE</span>
-          <span class="about__desc">Obtain the linear translation speed by measuring the time it takes to travel a fixed distance, which you decide.</span>
-        </li>
-        <li class="about__mode">
-          <span class="about__tag">DIAMETER</span>
-          <span class="about__desc">Obtain the linear translation speed by measuring the time it takes to make a turn, setting the diameter.</span>
-        </li>
-        <li class="about__mode">
-          <span class="about__tag">REVOLUTIONS</span>
-          <span class="about__desc">Obtain the rotational speed by measuring the time it takes to make a turn.</span>
-        </li>
-      </ul>
-    </div>
-    <div class="about__footer">
-      <button id="aboutOpenLink" class="btn btn-sm">Open Link</button>
-      <button id="aboutClose" class="btn btn-sm">Close</button>
-    </div>
+    <div class="about__header" data-i18n="about">About</div>
+    <div class="about__body"><div><strong>VirtualTachometer V3.0 (HTML5)</strong></div><div><span data-i18n="author">Author</span>: <strong>Raymundo Ortiz</strong></div><div><a class="about__link" href="https://github.com/FireRayo/VirtualTachometer" target="_blank" rel="noopener noreferrer">https://github.com/FireRayo/VirtualTachometer</a></div></div>
+    <div class="about__footer"><button id="aboutClose" class="btn btn-sm" data-i18n="close">Close</button></div>
   </dialog>
 
-  <script>
-    const video = document.getElementById('player');
-    const shell = document.getElementById('videoShell');
-    const mask = document.getElementById('dropMask');
-    const hint = document.getElementById('videoHint');
-    const picker = document.getElementById('filePicker');
-    const progress = document.getElementById('progress');
-    const playBtn = document.getElementById('play');
-    const fwdBtn = document.getElementById('fwd');
-    const bwdBtn = document.getElementById('bwd');
-    const overlay = document.getElementById('playOverlay');
-    overlay?.addEventListener('click', (e)=>{ e.stopPropagation(); picker.click(); });
-
-    const initialBtn = document.getElementById('initial');
-    const calcBtn = document.getElementById('calculate');
-    const finalBtn = document.getElementById('final');
-
-    const calcOverlay = document.getElementById('calcOverlay');
-    function setCalcBusy(on){
-      if(on){ calcOverlay?.classList.add('show'); }
-      else { calcOverlay?.classList.remove('show'); }
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const video=$('player'),shell=$('videoShell'),picker=$('filePicker'),progress=$('progress'),playBtn=$('play'),fwdBtn=$('fwd'),bwdBtn=$('bwd'),openVideoBtn=$('openVideo'),overlay=$('playOverlay'),initialBtn=$('initial'),calcBtn=$('calculate'),finalBtn=$('final'),calibrateBtn=$('calibrateFps'),fpsInput=$('fpsInput'),fpsSourceEl=$('fpsSource'),foot=$('footnoteText'),marksEl=$('marksText'),statusEl=$('statusMessage'),hint=$('videoHint'),calcOverlay=$('calcOverlay'),speedValueEl=$('speedValue'),speedLabelEl=$('speedLabel'),uncertaintyEl=$('uncertaintyText'),languageSelect=$('languageSelect');
+  const units=['mm','cm','m','km','in','ft','yd','mi'];
+  const I18N={
+    en:{
+      language:'Language',measurementMode:'Measurement mode',distanceUnitLabel:'Distance unit',diameterUnitLabel:'Diameter unit',selectVideo:'Select a video',working:'Working',progressBar:'Progress bar',frameRateControls:'Frame rate controls',timeUnitGroup:'Time unit',
+      measurementType:'Type of measurement',distance:'Distance',diameter:'Diameter',revolutions:'Revolutions',enterDistance:'Enter distance',enterDiameter:'Enter diameter',observedRevolutions:'Observed revolutions',videoPlayer:'Video player',dropVideo:'Drop your video file here',videoHint:'Click the play icon or drop a video file here.',openVideo:'Open video',backward:'⏪ BWD',play:'▶︎ PLAY',pause:'⏸︎ PAUSE',forward:'⏩ FWD',initial:'Initial',calculate:'Calculate',final:'Final',frameRate:'Frame rate (FPS)',calibrateFps:'Recalibrate FPS',timeUnit:'Time unit',sec:'Sec',min:'Min',hrs:'Hrs',linearSpeed:'Linear speed:',rotationalSpeed:'Rotational speed:',about:'About',close:'Close',
+      author:'Author',
+      loaded:'Video loaded and paused. Select the desired frame before marking Initial/Final.',readingMetadata:'Reading video timing metadata…',fpsContainer:'FPS from MP4/MOV timing metadata',fpsContainerVfr:'Average FPS from variable-frame-rate MP4/MOV metadata',fpsManual:'Manual FPS',fpsCalibrated:'FPS calibrated from displayed frame timestamps',fpsUnknown:'FPS unavailable',fpsNeed:'Frame stepping is disabled until a valid FPS is detected or entered.',fpsUnsupported:'Automatic container FPS detection is unavailable for this file. Enter FPS manually or use Recalibrate FPS.',fpsParseFail:'Container FPS metadata could not be read. Enter FPS manually or use Recalibrate FPS.',calibrating:'Calibrating FPS by briefly playing the video. The original position will be restored.',calibrateFail:'FPS calibration failed. Enter the FPS manually.',calibrateDone:'FPS calibration completed.',
+      videoErrorDecode:'The browser could not decode this video. The codec may not be supported by this browser.',videoErrorSource:'This video format or codec is not supported by the browser.',videoErrorNetwork:'The video could not be loaded because of a media/network error.',videoErrorAborted:'Video loading was aborted.',videoErrorGeneric:'The video could not be loaded or decoded.',invalidInterval:'Final time must be greater than Initial time.',invalidValue:'Enter a valid measurement value greater than zero.',invalidRevs:'Enter a valid number of observed revolutions (1 or more).',markUnavailable:'The displayed frame timestamp is not ready yet. Try again after the frame settles.',
+      initialTime:'Initial time',finalTime:'Final time',totalTime:'Total time',totalFrames:'Total frames',currentFrame:'Current frame',frame:'Frame',time:'Time',notAvailable:'N/A',vfr:'VFR',uncertaintyUnavailable:'Uncertainty: available after a valid FPS and time interval are set.',uncertainty:'Timing uncertainty: ±1 frame (≈ {dt} s). Approx. result uncertainty: ±{dv} {unit} ({pct}%).',uncertaintyRpm:'Timing uncertainty: ±1 frame (≈ {dt} s). Approx. RPM uncertainty: ±{dv} RPM ({pct}%).'
+    },
+    es:{
+      language:'Idioma',measurementMode:'Modo de medición',distanceUnitLabel:'Unidad de distancia',diameterUnitLabel:'Unidad de diámetro',selectVideo:'Seleccionar un video',working:'Procesando',progressBar:'Barra de progreso',frameRateControls:'Controles de frecuencia de fotogramas',timeUnitGroup:'Unidad de tiempo',
+      measurementType:'Tipo de medición',distance:'Distancia',diameter:'Diámetro',revolutions:'Revoluciones',enterDistance:'Ingresa la distancia',enterDiameter:'Ingresa el diámetro',observedRevolutions:'Revoluciones observadas',videoPlayer:'Reproductor de video',dropVideo:'Suelta aquí el archivo de video',videoHint:'Haz clic en el icono de reproducción o suelta aquí un archivo de video.',openVideo:'Abrir video',backward:'⏪ ATRÁS',play:'▶︎ REPRODUCIR',pause:'⏸︎ PAUSA',forward:'⏩ ADELANTE',initial:'Inicial',calculate:'Calcular',final:'Final',frameRate:'Frecuencia de fotogramas (FPS)',calibrateFps:'Recalibrar FPS',timeUnit:'Unidad de tiempo',sec:'Seg',min:'Min',hrs:'Hrs',linearSpeed:'Velocidad lineal:',rotationalSpeed:'Velocidad rotacional:',about:'Acerca de',close:'Cerrar',
+      author:'Autor',
+      loaded:'Video cargado y pausado. Selecciona el fotograma deseado antes de marcar Inicial/Final.',readingMetadata:'Leyendo los metadatos temporales del video…',fpsContainer:'FPS obtenidos de los metadatos temporales MP4/MOV',fpsContainerVfr:'FPS promedio obtenidos de metadatos MP4/MOV con frecuencia de fotogramas variable',fpsManual:'FPS ingresados manualmente',fpsCalibrated:'FPS calibrados a partir de las marcas de tiempo de los fotogramas mostrados',fpsUnknown:'FPS no disponibles',fpsNeed:'El avance fotograma a fotograma está deshabilitado hasta detectar o ingresar un valor de FPS válido.',fpsUnsupported:'La detección automática de FPS del contenedor no está disponible para este archivo. Ingresa los FPS manualmente o usa Recalibrar FPS.',fpsParseFail:'No se pudieron leer los metadatos de FPS del contenedor. Ingresa los FPS manualmente o usa Recalibrar FPS.',calibrating:'Calibrando los FPS mediante una reproducción breve. Se restaurará la posición original.',calibrateFail:'La calibración de FPS falló. Ingresa los FPS manualmente.',calibrateDone:'Calibración de FPS completada.',
+      videoErrorDecode:'El navegador no pudo decodificar este video. Es posible que el códec no sea compatible con este navegador.',videoErrorSource:'El formato o el códec de este video no es compatible con el navegador.',videoErrorNetwork:'El video no pudo cargarse debido a un error de reproducción o de red.',videoErrorAborted:'La carga del video fue cancelada.',videoErrorGeneric:'El video no pudo cargarse o decodificarse.',invalidInterval:'El tiempo Final debe ser mayor que el tiempo Inicial.',invalidValue:'Ingresa un valor de medición válido mayor que cero.',invalidRevs:'Ingresa un número válido de revoluciones observadas (1 o más).',markUnavailable:'La marca de tiempo del fotograma mostrado aún no está disponible. Inténtalo de nuevo cuando el fotograma se estabilice.',
+      initialTime:'Tiempo inicial',finalTime:'Tiempo final',totalTime:'Tiempo total',totalFrames:'Fotogramas totales',currentFrame:'Fotograma actual',frame:'Fotograma',time:'Tiempo',notAvailable:'N/D',vfr:'VFR',uncertaintyUnavailable:'Incertidumbre: disponible después de definir un valor de FPS válido y un intervalo de tiempo.',uncertainty:'Incertidumbre temporal: ±1 fotograma (≈ {dt} s). Incertidumbre aproximada del resultado: ±{dv} {unit} ({pct}%).',uncertaintyRpm:'Incertidumbre temporal: ±1 fotograma (≈ {dt} s). Incertidumbre aproximada de RPM: ±{dv} RPM ({pct}%).'
+    },
+    it:{
+      language:'Lingua',measurementMode:'Modalità di misurazione',distanceUnitLabel:'Unità di distanza',diameterUnitLabel:'Unità del diametro',selectVideo:'Seleziona un video',working:'Elaborazione',progressBar:'Barra di avanzamento',frameRateControls:'Controlli della frequenza fotogrammi',timeUnitGroup:'Unità di tempo',
+      measurementType:'Tipo di misurazione',distance:'Distanza',diameter:'Diametro',revolutions:'Giri',enterDistance:'Inserisci la distanza',enterDiameter:'Inserisci il diametro',observedRevolutions:'Giri osservati',videoPlayer:'Lettore video',dropVideo:'Rilascia qui il file video',videoHint:'Fai clic sull’icona di riproduzione oppure trascina qui un file video.',openVideo:'Apri video',backward:'⏪ INDIETRO',play:'▶︎ RIPRODUCI',pause:'⏸︎ PAUSA',forward:'⏩ AVANTI',initial:'Iniziale',calculate:'Calcola',final:'Finale',frameRate:'Frequenza fotogrammi (FPS)',calibrateFps:'Ricalibra FPS',timeUnit:'Unità di tempo',sec:'Sec',min:'Min',hrs:'Ore',linearSpeed:'Velocità lineare:',rotationalSpeed:'Velocità di rotazione:',about:'Informazioni',close:'Chiudi',
+      author:'Autore',
+      loaded:'Video caricato e in pausa. Seleziona il fotogramma desiderato prima di impostare Iniziale/Finale.',readingMetadata:'Lettura dei metadati temporali del video…',fpsContainer:'FPS ricavati dai metadati temporali MP4/MOV',fpsContainerVfr:'FPS medi ricavati dai metadati MP4/MOV a frequenza fotogrammi variabile',fpsManual:'FPS inseriti manualmente',fpsCalibrated:'FPS calibrati dai timestamp dei fotogrammi visualizzati',fpsUnknown:'FPS non disponibili',fpsNeed:'L’avanzamento fotogramma per fotogramma è disabilitato finché non viene rilevato o inserito un valore FPS valido.',fpsUnsupported:'Il rilevamento automatico degli FPS dal contenitore non è disponibile per questo file. Inserisci gli FPS manualmente oppure usa Ricalibra FPS.',fpsParseFail:'Non è stato possibile leggere i metadati FPS del contenitore. Inserisci gli FPS manualmente oppure usa Ricalibra FPS.',calibrating:'Calibrazione degli FPS mediante una breve riproduzione del video. La posizione originale verrà ripristinata.',calibrateFail:'Calibrazione FPS non riuscita. Inserisci gli FPS manualmente.',calibrateDone:'Calibrazione FPS completata.',
+      videoErrorDecode:'Il browser non è riuscito a decodificare questo video. Il codec potrebbe non essere supportato da questo browser.',videoErrorSource:'Il formato o il codec di questo video non è supportato dal browser.',videoErrorNetwork:'Non è stato possibile caricare il video a causa di un errore multimediale o di rete.',videoErrorAborted:'Il caricamento del video è stato annullato.',videoErrorGeneric:'Non è stato possibile caricare o decodificare il video.',invalidInterval:'Il tempo Finale deve essere maggiore del tempo Iniziale.',invalidValue:'Inserisci un valore di misurazione valido maggiore di zero.',invalidRevs:'Inserisci un numero valido di giri osservati (1 o più).',markUnavailable:'Il timestamp del fotogramma visualizzato non è ancora disponibile. Riprova quando il fotogramma si è stabilizzato.',
+      initialTime:'Tempo iniziale',finalTime:'Tempo finale',totalTime:'Tempo totale',totalFrames:'Fotogrammi totali',currentFrame:'Fotogramma corrente',frame:'Fotogramma',time:'Tempo',notAvailable:'N/D',vfr:'VFR',uncertaintyUnavailable:'Incertezza: disponibile dopo aver definito un valore FPS valido e un intervallo di tempo.',uncertainty:'Incertezza temporale: ±1 fotogramma (≈ {dt} s). Incertezza approssimativa del risultato: ±{dv} {unit} ({pct}%).',uncertaintyRpm:'Incertezza temporale: ±1 fotogramma (≈ {dt} s). Incertezza approssimativa degli RPM: ±{dv} RPM ({pct}%).'
     }
+  };
+  const prefsKey='VirtualTachometer.V2.preferences';
+  const browserLang=(navigator.language||'').toLowerCase();
+  const defaultPrefs={mode:'distance',timeunit:'seg',distance:'',distanceUnit:'mm',diameter:'',diameterUnit:'mm',revolutions:'1',lang:browserLang.startsWith('es')?'es':browserLang.startsWith('it')?'it':'en'};
+  let prefs={...defaultPrefs}; try{prefs={...prefs,...JSON.parse(localStorage.getItem(prefsKey)||'{}')}}catch(_){} let lang=I18N[prefs.lang]?prefs.lang:'en';
+  function t(key,vars={}){let s=(I18N[lang]&&I18N[lang][key])||I18N.en[key]||key;for(const[k,v]of Object.entries(vars))s=s.replaceAll(`{${k}}`,String(v));return s;}
+  function savePrefs(){try{localStorage.setItem(prefsKey,JSON.stringify(prefs))}catch(_){}}
+  function updatePlayButton(){playBtn.textContent=video.paused?t('play'):t('pause')}
+  function applyLanguage(){document.documentElement.lang=lang;languageSelect.value=lang;document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=t(el.dataset.i18nPlaceholder));document.querySelectorAll('[data-i18n-aria-label]').forEach(el=>el.setAttribute('aria-label',t(el.dataset.i18nAriaLabel)));updatePlayButton();updateModeUI();updateMarks();refreshFootnote();updateFpsSource();updateResult();}
+  function setCalcBusy(on){calcOverlay.classList.toggle('show',!!on)}
+  function showStatus(message='',type='info'){if(!message){statusEl.textContent='';statusEl.className='status hidden';return}statusEl.textContent=message;statusEl.className=`status ${type==='info'?'':type}`.trim();}
 
+  let initialTime,finalTime,totalTime,fpsEstimate=null,totalFrames=null,fpsSource='none',fpsIsVfr=false,currentFile=null,currentObjectUrl=null,loadToken=0;
+  const distanceInput=$('distanceInput'),diameterInput=$('diameterInput'),distanceUnit=$('distanceUnit'),diameterUnit=$('diameterUnit'),revolutionCount=$('revolutionCount');
+  units.forEach(u=>{const a=document.createElement('option');a.value=u;a.textContent=u;distanceUnit.appendChild(a);const b=document.createElement('option');b.value=u;b.textContent=u;diameterUnit.appendChild(b)});
+  distanceInput.value=prefs.distance??'';diameterInput.value=prefs.diameter??'';distanceUnit.value=units.includes(prefs.distanceUnit)?prefs.distanceUnit:'mm';diameterUnit.value=units.includes(prefs.diameterUnit)?prefs.diameterUnit:'mm';revolutionCount.value=String(Math.max(1,parseInt(prefs.revolutions,10)||1));
+  function selectedMode(){return document.querySelector('input[name="mode"]:checked')?.value||'distance'} function selectedTimeUnit(){return document.querySelector('input[name="timeunit"]:checked')?.value||'seg'}
+  function updateModeUI(){const mode=selectedMode();$('distanceFields').classList.toggle('hidden',mode!=='distance');$('diameterFields').classList.toggle('hidden',mode!=='diameter');$('revolutionFields').classList.toggle('hidden',mode!=='revolutions');speedLabelEl.textContent=mode==='revolutions'?t('rotationalSpeed'):t('linearSpeed')}
+  function restoreRadio(name,value){const el=document.querySelector(`input[name="${name}"][value="${value}"]`);if(el)el.checked=true} restoreRadio('mode',prefs.mode);restoreRadio('timeunit',prefs.timeunit);
+  document.querySelectorAll('input[name="mode"]').forEach(r=>r.addEventListener('change',()=>{prefs.mode=selectedMode();savePrefs();updateModeUI();updateResult()}));document.querySelectorAll('input[name="timeunit"]').forEach(r=>r.addEventListener('change',()=>{prefs.timeunit=selectedTimeUnit();savePrefs();updateResult()}));
+  distanceInput.addEventListener('input',()=>{prefs.distance=distanceInput.value;savePrefs();updateResult()});diameterInput.addEventListener('input',()=>{prefs.diameter=diameterInput.value;savePrefs();updateResult()});distanceUnit.addEventListener('change',()=>{prefs.distanceUnit=distanceUnit.value;savePrefs();updateResult()});diameterUnit.addEventListener('change',()=>{prefs.diameterUnit=diameterUnit.value;savePrefs();updateResult()});revolutionCount.addEventListener('input',()=>{prefs.revolutions=revolutionCount.value;savePrefs();updateResult()});languageSelect.addEventListener('change',()=>{lang=languageSelect.value;prefs.lang=lang;savePrefs();applyLanguage()});
+  function formatHMS(sec){if(!Number.isFinite(sec))return'N/A';const totalMs=Math.max(0,Math.round(sec*1000)),hh=Math.floor(totalMs/3600000),mm=Math.floor((totalMs%3600000)/60000),ss=Math.floor((totalMs%60000)/1000),ms=totalMs%1000,p2=n=>String(n).padStart(2,'0'),p3=n=>String(n).padStart(3,'0');return hh>0?`${p2(hh)}:${p2(mm)}:${p2(ss)}:${p3(ms)}`:`${p2(mm)}:${p2(ss)}:${p3(ms)}`}
+  function updateMarks(){marksEl.textContent=`${t('initialTime')}: ${Number.isFinite(initialTime)?formatHMS(initialTime):'--:--:---'} · ${t('finalTime')}: ${Number.isFinite(finalTime)?formatHMS(finalTime):'--:--:---'} · ${t('totalTime')}: ${Number.isFinite(totalTime)?formatHMS(totalTime):'--:--:---'}`}
+  function timeUnitFactor(){const u=selectedTimeUnit();return u==='min'?60:u==='hrs'?3600:1} function timeUnitSuffix(){const u=selectedTimeUnit();return u==='min'?'/min':u==='hrs'?'/h':'/s'}
+  function updateResult(){const mode=selectedMode();speedLabelEl.textContent=mode==='revolutions'?t('rotationalSpeed'):t('linearSpeed');let value=null,unit='';if(Number.isFinite(totalTime)&&totalTime>0){if(mode==='distance'){const d=Number(distanceInput.value);if(Number.isFinite(d)&&d>0){value=(d/totalTime)*timeUnitFactor();unit=distanceUnit.value+timeUnitSuffix()}}else if(mode==='diameter'){const d=Number(diameterInput.value);if(Number.isFinite(d)&&d>0){value=((Math.PI*d)/totalTime)*timeUnitFactor();unit=diameterUnit.value+timeUnitSuffix()}}else{const n=Number(revolutionCount.value);if(Number.isFinite(n)&&n>=1){value=(60*n)/totalTime;unit='RPM'}}}speedValueEl.textContent=value==null?'--':`${value.toFixed(3)} ${unit}`;updateUncertainty(value,unit)}
+  function updateUncertainty(resultValue,unit){if(!Number.isFinite(fpsEstimate)||fpsEstimate<=0||!Number.isFinite(totalTime)||totalTime<=0||!Number.isFinite(resultValue)){uncertaintyEl.textContent=t('uncertaintyUnavailable');return}const dt=1/fpsEstimate,rel=dt/totalTime,dv=Math.abs(resultValue)*rel,vars={dt:dt.toFixed(4),dv:dv.toFixed(3),unit,pct:(rel*100).toFixed(2)};uncertaintyEl.textContent=selectedMode()==='revolutions'?t('uncertaintyRpm',vars):t('uncertainty',vars)}
 
-    // About dialog logic (clickable hyperlink)
-    const aboutBtn = document.getElementById('aboutBtn');
-    const aboutDlg = document.getElementById('aboutDialog');
-    const aboutClose = document.getElementById('aboutClose');
-    const aboutOpenLink = document.getElementById('aboutOpenLink');
+  const supportsRVFC=typeof video.requestVideoFrameCallback==='function';let lastFrameMediaTime=null,lastPresentedFrames=null,frameCallbackId=null;
+  function startFrameTracker(){if(!supportsRVFC||frameCallbackId!==null)return;const track=(now,meta)=>{if(Number.isFinite(meta.mediaTime))lastFrameMediaTime=meta.mediaTime;if(Number.isFinite(meta.presentedFrames))lastPresentedFrames=meta.presentedFrames;refreshFootnote();frameCallbackId=video.requestVideoFrameCallback(track)};try{frameCallbackId=video.requestVideoFrameCallback(track)}catch(_){frameCallbackId=null}}
+  function currentDisplayedTime(){if(supportsRVFC&&Number.isFinite(lastFrameMediaTime))return lastFrameMediaTime;return Number.isFinite(video.currentTime)?video.currentTime:null}
 
-    aboutBtn?.addEventListener('click', ()=>{
-      // Open the dialog (contains a real hyperlink)
-      if (aboutDlg?.showModal) aboutDlg.showModal();
-    });
-    aboutClose?.addEventListener('click', ()=> aboutDlg?.close());
-    aboutOpenLink?.addEventListener('click', ()=>{
-      window.open('https://github.com/FireRayo', '_blank', 'noopener');
-    });
-    // close when clicking backdrop
-    aboutDlg?.addEventListener('click', (e)=>{
-      if (e.target === aboutDlg) aboutDlg.close();
-    });
+  let isSeeking=false,pendingSliderTarget=null,userScrubbing=false,calibrationBusy=false;
+  function updateSeekControls(){const ready=video.readyState>=1,hasFps=Number.isFinite(fpsEstimate)&&fpsEstimate>0;bwdBtn.disabled=!ready||!hasFps||isSeeking||calibrationBusy;fwdBtn.disabled=!ready||!hasFps||isSeeking||calibrationBusy;initialBtn.disabled=!ready||isSeeking||calibrationBusy;finalBtn.disabled=!ready||isSeeking||calibrationBusy;calcBtn.disabled=!ready||calibrationBusy}
+  function setReadyControls(on){playBtn.disabled=!on;progress.disabled=!on;fpsInput.disabled=!on;calibrateBtn.disabled=!on;calcBtn.disabled=!on;initialBtn.disabled=!on;finalBtn.disabled=!on;updateSeekControls()}
+  function requestSeek(target,source='step'){if(!Number.isFinite(video.duration)||video.duration<=0)return false;target=Math.min(Math.max(target,0),video.duration);if(isSeeking){if(source==='slider')pendingSliderTarget=target;return false}if(Math.abs((video.currentTime||0)-target)<0.000001){updateProgressFromVideo();return true}video.pause();lastFrameMediaTime=null;isSeeking=true;updateSeekControls();try{video.currentTime=target}catch(_){isSeeking=false;updateSeekControls();return false}return true}
+  video.addEventListener('seeking',()=>{lastFrameMediaTime=null;isSeeking=true;updateSeekControls()});
+  video.addEventListener('seeked',()=>{isSeeking=false;if(Number.isFinite(pendingSliderTarget)){const next=pendingSliderTarget;pendingSliderTarget=null;if(Math.abs(video.currentTime-next)>0.0002){requestSeek(next,'slider');return}}updateProgressFromVideo();updateSeekControls()});
+  function stepFrames(n=1){if(isSeeking||calibrationBusy)return;if(!Number.isFinite(fpsEstimate)||fpsEstimate<=0){showStatus(t('fpsNeed'),'warn');return}const dt=1/fpsEstimate,eps=Math.min(0.0005,dt/10),displayed=currentDisplayedTime(),base=Number.isFinite(displayed)?displayed:(video.currentTime||0);requestSeek(base+(n*dt)+(n>0?eps:-eps),'step')}
+  progress.addEventListener('pointerdown',()=>{userScrubbing=true});window.addEventListener('pointerup',()=>{userScrubbing=false});progress.addEventListener('input',()=>{if(!Number.isFinite(video.duration)||video.duration<=0)return;const target=video.duration*(Number(progress.value)/Number(progress.max));requestSeek(target,'slider')});progress.addEventListener('change',()=>{userScrubbing=false});
+  function updateProgressFromVideo(){if(userScrubbing||isSeeking||!Number.isFinite(video.duration)||video.duration<=0)return;const displayed=currentDisplayedTime(),time=Number.isFinite(displayed)?displayed:video.currentTime;progress.value=String(Math.round((time/video.duration)*Number(progress.max)));refreshFootnote()}
+  video.addEventListener('timeupdate',()=>{if(!isSeeking&&!userScrubbing)updateProgressFromVideo()});
 
-    const marksEl = document.getElementById('marksText');
-    function formatHMS(t){
-      if (!isFinite(t)) return 'N/A';
-      const totalMs = Math.floor(t*1000);
-      const mm = Math.floor(totalMs / 60000);
-      const ss = Math.floor((totalMs % 60000) / 1000);
-      const ms = totalMs % 1000;
-      const pad2 = (n)=> String(n).padStart(2,'0');
-      const pad3 = (n)=> String(n).padStart(3,'0');
-      return `${pad2(mm)}:${pad2(ss)}:${pad3(ms)}`;
-    }
-    function updateMarks(){
-      const it = (typeof window.InitialTime === 'number') ? formatHMS(window.InitialTime) : '--:--:---';
-      const ft = (typeof window.FinalTime === 'number') ? formatHMS(window.FinalTime) : '--:--:---';
-      const tt = (typeof window.TotalTime === 'number') ? formatHMS(window.TotalTime) : '--:--:---';
-      if (marksEl) marksEl.textContent = `InitialTime: ${it} · FinalTime: ${ft} · TotalTime: ${tt}`;
-    }
-    window.InitialTime = undefined;
-    window.FinalTime = undefined;
-    window.TotalTime = undefined;
-    updateMarks();
-    initialBtn?.addEventListener('click', ()=>{
-      if (!isFinite(video.currentTime)) return;
-      window.InitialTime = video.currentTime;
-      updateMarks();
-    });
-    finalBtn?.addEventListener('click', ()=>{
-      if (!isFinite(video.currentTime)) return;
-      window.FinalTime = video.currentTime;
-      updateMarks();
-    });
+  function applyFps(fps,source,options={}){if(!Number.isFinite(fps)||fps<=0)return false;fpsEstimate=fps;fpsSource=source;fpsIsVfr=!!options.vfr;totalFrames=Number.isFinite(options.totalFrames)?Math.round(options.totalFrames):(Number.isFinite(video.duration)?Math.round(video.duration*fps):null);fpsInput.value=(Math.round(fps*1000)/1000).toString();updateFpsSource();refreshFootnote();updateSeekControls();updateResult();return true}
+  function clearFps(){fpsEstimate=null;totalFrames=null;fpsSource='none';fpsIsVfr=false;fpsInput.value='';updateFpsSource();refreshFootnote();updateSeekControls();updateResult()}
+  function updateFpsSource(){let sourceText=t('fpsUnknown');if(fpsSource==='container')sourceText=fpsIsVfr?t('fpsContainerVfr'):t('fpsContainer');else if(fpsSource==='manual')sourceText=t('fpsManual');else if(fpsSource==='calibrated')sourceText=t('fpsCalibrated');fpsSourceEl.textContent=Number.isFinite(fpsEstimate)?`${fpsEstimate.toFixed(3)} FPS · ${sourceText}${fpsIsVfr?` · ${t('vfr')}`:''}`:sourceText}
+  fpsInput.addEventListener('change',()=>{const v=Number(fpsInput.value);if(Number.isFinite(v)&&v>0)applyFps(v,'manual');else clearFps()});
+  function refreshFootnote(){const displayed=currentDisplayedTime(),time=Number.isFinite(displayed)?displayed:(Number.isFinite(video.currentTime)?video.currentTime:null),currentFrame=(Number.isFinite(fpsEstimate)&&Number.isFinite(time))?Math.max(0,Math.round(time*fpsEstimate)):null,na=t('notAvailable'),fpsTxt=Number.isFinite(fpsEstimate)?fpsEstimate.toFixed(3):na,totalTxt=Number.isFinite(totalFrames)?totalFrames.toLocaleString():na,frameTxt=Number.isFinite(currentFrame)?currentFrame.toLocaleString():na,timeTxt=Number.isFinite(time)?formatHMS(time):na;foot.textContent=`←/→ = ±1 ${t('frame')} · FPS: ${fpsTxt} · ${t('totalFrames')}: ${totalTxt} · ${t('currentFrame')}: ${frameTxt} · ${t('time')}: ${timeTxt}`}
 
-    calcBtn?.addEventListener('click', ()=>{
-      const it = window.InitialTime;
-      const ft = window.FinalTime;
-      if (typeof it === 'number' && typeof ft === 'number' && ft > it) {
-        window.TotalTime = ft - it;
-        updateMarks();
-        updateLinearSpeed();
-      } else {
-        window.TotalTime = undefined;
-        updateMarks();
-        updateLinearSpeed();
-        alert('FinalTime > InitialTime');
-      }
-    });
+  function typeAt(view,off){return String.fromCharCode(view.getUint8(off),view.getUint8(off+1),view.getUint8(off+2),view.getUint8(off+3))}function u64(view,off){if(typeof view.getBigUint64==='function'){const v=view.getBigUint64(off);return v<=BigInt(Number.MAX_SAFE_INTEGER)?Number(v):Number.MAX_SAFE_INTEGER}return view.getUint32(off)*4294967296+view.getUint32(off+4)}
+  function readBox(view,off,end){if(off+8>end)return null;let size=view.getUint32(off);const type=typeAt(view,off+4);let header=8;if(size===1){if(off+16>end)return null;size=u64(view,off+8);header=16}else if(size===0)size=end-off;if(!Number.isFinite(size)||size<header||off+size>end)return null;return{type,start:off,dataStart:off+header,end:off+size,size}}
+  function childBoxes(view,start,end){const out=[];let p=start;while(p+8<=end){const b=readBox(view,p,end);if(!b)break;out.push(b);p=b.end}return out}function child(view,parent,type){return childBoxes(view,parent.dataStart,parent.end).find(b=>b.type===type)||null}function children(view,parent,type){return childBoxes(view,parent.dataStart,parent.end).filter(b=>b.type===type)}
+  async function readTopLevelBoxHeader(file,offset){const buf=await file.slice(offset,Math.min(file.size,offset+16)).arrayBuffer(),v=new DataView(buf);if(v.byteLength<8)return null;let size=v.getUint32(0),type=typeAt(v,4),header=8;if(size===1){if(v.byteLength<16)return null;size=u64(v,8);header=16}else if(size===0)size=file.size-offset;if(!Number.isFinite(size)||size<header||offset+size>file.size)return null;return{type,start:offset,size,header,end:offset+size}}
+  function parseMp4Timing(moovBuffer){const view=new DataView(moovBuffer),root=readBox(view,0,view.byteLength);if(!root||root.type!=='moov')return null;for(const trak of children(view,root,'trak')){const mdia=child(view,trak,'mdia');if(!mdia)continue;const hdlr=child(view,mdia,'hdlr');if(!hdlr||hdlr.dataStart+12>hdlr.end)continue;if(typeAt(view,hdlr.dataStart+8)!=='vide')continue;const mdhd=child(view,mdia,'mdhd'),minf=child(view,mdia,'minf'),stbl=minf?child(view,minf,'stbl'):null,stts=stbl?child(view,stbl,'stts'):null;if(!mdhd||!stts)continue;const version=view.getUint8(mdhd.dataStart);let timescale=0;if(version===1){if(mdhd.dataStart+32>mdhd.end)continue;timescale=view.getUint32(mdhd.dataStart+20)}else{if(mdhd.dataStart+20>mdhd.end)continue;timescale=view.getUint32(mdhd.dataStart+12)}if(!timescale)continue;let p=stts.dataStart+4;if(p+4>stts.end)continue;const entries=view.getUint32(p);p+=4;let sampleCount=0,durationTicks=0;const deltas=new Set();for(let i=0;i<entries;i++){if(p+8>stts.end)break;const count=view.getUint32(p),delta=view.getUint32(p+4);p+=8;if(count&&delta){sampleCount+=count;durationTicks+=count*delta;deltas.add(delta)}}if(sampleCount>0&&durationTicks>0)return{fps:(sampleCount*timescale)/durationTicks,totalFrames:sampleCount,vfr:deltas.size>1,timescale,entries:deltas.size}}return null}
+  async function detectMp4Fps(file){let pos=0,moov=null,ftypSeen=false,safety=0;while(pos+8<=file.size&&safety++<10000){const b=await readTopLevelBoxHeader(file,pos);if(!b)break;if(b.type==='ftyp')ftypSeen=true;if(b.type==='moov'){moov=b;break}pos=b.end}if(!ftypSeen||!moov)return null;if(moov.size>64*1024*1024)throw new Error('moov box too large');const buf=await file.slice(moov.start,moov.end).arrayBuffer();return parseMp4Timing(buf)}
+  async function detectFpsFromContainer(file,token){const name=(file.name||'').toLowerCase(),likelyIso=/\.(mp4|m4v|mov|qt)$/i.test(name)||/mp4|quicktime/i.test(file.type||'');if(!likelyIso){if(token===loadToken)showStatus(t('fpsUnsupported'),'warn');return}try{const result=await detectMp4Fps(file);if(token!==loadToken)return;if(result&&Number.isFinite(result.fps)){applyFps(result.fps,'container',{totalFrames:result.totalFrames,vfr:result.vfr});showStatus(t('loaded'),'ok')}else showStatus(`${t('loaded')} ${t('fpsParseFail')}`,'warn')}catch(_){if(token===loadToken)showStatus(`${t('loaded')} ${t('fpsParseFail')}`,'warn')}}
 
-    // === LinearSpeed calculation (Distance mode) ===
-    const speedValueEl = document.getElementById('speedValue');
-    const speedLabelEl = document.getElementById('speedLabel');
+  function snapRate(fps){const rates=[23.976,24,25,29.97,30,48,50,59.94,60,100,119.88,120,240];let best=fps,bestDiff=Infinity;for(const r of rates){const d=Math.abs(fps-r);if(d<bestDiff){bestDiff=d;best=r}}return bestDiff<=Math.max(.08,best*.0025)?best:fps}
+  function waitSeek(target,timeout=3000){return new Promise(resolve=>{if(!Number.isFinite(video.duration)){resolve(false);return}target=Math.min(Math.max(target,0),video.duration);if(Math.abs(video.currentTime-target)<0.0002){resolve(true);return}let done=false;const finish=ok=>{if(done)return;done=true;clearTimeout(timer);video.removeEventListener('seeked',onSeek);resolve(ok)},onSeek=()=>finish(true),timer=setTimeout(()=>finish(false),timeout);video.addEventListener('seeked',onSeek,{once:true});lastFrameMediaTime=null;try{video.currentTime=target}catch(_){finish(false)}})}
+  function sampleFpsRvfc(minMediaSeconds=1.15,maxMs=3000){if(!supportsRVFC)return Promise.resolve(null);return new Promise(resolve=>{let firstMedia=null,prevMedia=null,prevPresented=null,id=null,finished=false;const estimates=[],finish=value=>{if(finished)return;finished=true;clearTimeout(timer);if(id!==null&&typeof video.cancelVideoFrameCallback==='function'){try{video.cancelVideoFrameCallback(id)}catch(_){}}resolve(value)},timer=setTimeout(()=>finish(null),maxMs),cb=(now,meta)=>{const mt=meta.mediaTime,pf=meta.presentedFrames;if(Number.isFinite(mt)){if(firstMedia===null)firstMedia=mt;if(Number.isFinite(prevMedia)&&mt>prevMedia){let frames=1;if(Number.isFinite(pf)&&Number.isFinite(prevPresented)&&pf>prevPresented)frames=pf-prevPresented;const inst=frames/(mt-prevMedia);if(inst>=5&&inst<=500)estimates.push(inst)}prevMedia=mt;if(Number.isFinite(pf))prevPresented=pf;if(firstMedia!==null&&mt-firstMedia>=minMediaSeconds&&estimates.length>=8){estimates.sort((a,b)=>a-b);finish(estimates[Math.floor(estimates.length/2)]);return}}id=video.requestVideoFrameCallback(cb)};try{id=video.requestVideoFrameCallback(cb)}catch(_){finish(null)}})}
+  async function sampleFpsPlaybackQuality(sampleMs=1600){if(typeof video.getVideoPlaybackQuality!=='function')return null;const q0=video.getVideoPlaybackQuality(),f0=q0?.totalVideoFrames,t0=video.currentTime;if(!Number.isFinite(f0))return null;await new Promise(r=>setTimeout(r,sampleMs));const q1=video.getVideoPlaybackQuality(),f1=q1?.totalVideoFrames,t1=video.currentTime;if(!Number.isFinite(f1)||!Number.isFinite(t1)||t1<=t0||f1<=f0)return null;return(f1-f0)/(t1-t0)}
+  async function calibrateFps(){if(calibrationBusy||video.readyState<1)return;calibrationBusy=true;setCalcBusy(true);updateSeekControls();showStatus(t('calibrating'),'warn');const originalTime=video.currentTime,originalMuted=video.muted,originalRate=video.playbackRate,wasPaused=video.paused;try{video.pause();video.muted=true;video.playbackRate=1;const start=(Number.isFinite(video.duration)&&originalTime>video.duration-1.7)?Math.max(0,video.duration-1.7):originalTime;await waitSeek(start);const rvfcPromise=sampleFpsRvfc(),qualityPromise=sampleFpsPlaybackQuality();await video.play();const[r1,r2]=await Promise.all([rvfcPromise,qualityPromise]);video.pause();let fps=Number.isFinite(r1)?r1:(Number.isFinite(r2)?r2:null);if(Number.isFinite(r1)&&Number.isFinite(r2)&&Math.abs(r1-r2)/r1<0.03)fps=(r1+r2)/2;if(Number.isFinite(fps)&&fps>0){fps=snapRate(fps);applyFps(fps,'calibrated');showStatus(t('calibrateDone'),'ok')}else showStatus(t('calibrateFail'),'warn')}catch(_){showStatus(t('calibrateFail'),'warn')}finally{video.pause();await waitSeek(originalTime);video.muted=originalMuted;video.playbackRate=originalRate;if(!wasPaused)video.play().catch(()=>{});calibrationBusy=false;setCalcBusy(false);updateSeekControls();updateProgressFromVideo()}}
+  calibrateBtn.addEventListener('click',calibrateFps);
 
-    function getTimeUnitFactor(){
-      const sel = document.querySelector('input[name="timeunit"]:checked');
-      const val = sel ? sel.value : 'seg';
-      if (val === 'min') return 60;
-      if (val === 'hrs') return 3600;
-      return 1; // seconds
-    }
-
-    function getTimeUnitSuffix(){
-      const sel = document.querySelector('input[name="timeunit"]:checked');
-      const val = sel ? sel.value : 'seg';
-      if (val === 'min') return '/min';
-      if (val === 'hrs') return '/h';
-      return '/s';
-    }
-
-    function updateLinearSpeed(){
-      try{
-        const modeEl = document.querySelector('input[name="mode"]:checked');
-        const mode = modeEl ? modeEl.value : 'distance';
-        const tt = (typeof window.TotalTime === 'number' && window.TotalTime > 0) ? window.TotalTime : null;
-
-        if (mode === 'revolutions'){
-          if (speedLabelEl) speedLabelEl.textContent = 'RotationalSpeed:';
-          if (tt != null){
-            const rpm = 60 / tt; // seconds per revolution
-            if (speedValueEl) speedValueEl.textContent = `${rpm.toFixed(3)} RPM`;
-          } else {
-            if (speedValueEl) speedValueEl.textContent = '--';
-          }
-          return;
-        }
-
-        // Distance or Diameter -> Linear speed
-        if (speedLabelEl) speedLabelEl.textContent = 'LinearSpeed:';
-
-        let dist = null;
-        let unit = '';
-
-        if (mode === 'distance'){
-          dist = (typeof window.InDistance === 'number') ? window.InDistance : null;
-          unit = (typeof window.InDistanceUnit === 'string') ? window.InDistanceUnit : '';
-        } else if (mode === 'diameter'){
-          const d = (typeof window.InDiameter === 'number') ? window.InDiameter : null;
-          dist = (d != null) ? (Math.PI * d) : null; // circumference = π * D
-          unit = (typeof window.InDiameterUnit === 'string') ? window.InDiameterUnit : '';
-        } else {
-          if (speedValueEl) speedValueEl.textContent = '--';
-          return;
-        }
-
-        if (tt != null && dist != null){
-          const factor = getTimeUnitFactor();            // seconds-> selected time unit
-          const v = (dist / tt) * factor;
-          const suf = getTimeUnitSuffix();               // '/s', '/min', '/h'
-          if (speedValueEl) speedValueEl.textContent = `${v.toFixed(3)} ${unit}${suf}`;
-        } else {
-          if (speedValueEl) speedValueEl.textContent = '--';
-        }
-      }catch(e){
-        if (speedValueEl) speedValueEl.textContent = '--';
-      }
-    }
-
-    // Recompute when time unit changes
-    document.querySelectorAll('input[name="timeunit"]').forEach(r=>{
-      r.addEventListener('change', ()=>{ updateLinearSpeed(); });
-    });
-
-    // Footnote + frame count state
-    const foot = document.getElementById('footnoteText');
-    const baseFootText = '←/→ = ±1 Frame';
-    let fpsEstimate = null;            // number (fps)
-    let totalFrameEstimate = null;     // number (frames)
-    let fpsPrecise = false;            // snapped to a standard rate
-
-    function refreshFootnote(){
-      if(!foot) return;
-      const fpsTxt = Number.isFinite(fpsEstimate) ? fpsEstimate.toFixed(2) : 'N/A';
-      const framesTxt = Number.isFinite(totalFrameEstimate) ? Math.round(totalFrameEstimate).toLocaleString() : 'N/A';
-      const fpsApprox = Number.isFinite(fpsEstimate) && !fpsPrecise ? ' (≈)' : '';
-      const framesApprox = Number.isFinite(totalFrameEstimate) && !fpsPrecise ? ' (≈)' : '';
-      
-      // current time in MM:SS:MS
-      let timeTxt = 'N/A';
-      if (isFinite(video.currentTime)) {
-        const totalMs = Math.floor(video.currentTime * 1000);
-        const mm = Math.floor(totalMs / 60000);
-        const ss = Math.floor((totalMs % 60000) / 1000);
-        const ms = totalMs % 1000;
-        const pad2 = (n)=> String(n).padStart(2,'0');
-        const pad3 = (n)=> String(n).padStart(3,'0');
-        timeTxt = `${pad2(mm)}:${pad2(ss)}:${pad3(ms)}`;
-      }
-      foot.textContent = `${baseFootText} · FPS${fpsApprox}: ${fpsTxt} · Total frames${framesApprox}: ${framesTxt} · Current frame: ${ (Number.isFinite(fpsEstimate) && isFinite(video.currentTime)) ? Math.max(0, Math.round(video.currentTime * fpsEstimate)).toLocaleString() : 'N/A' } · Time: ${timeTxt}`;
-    }
-    refreshFootnote();
-
-    // Utility: enable player UI when media is ready
-    function enablePlayerUI(on){
-      [playBtn, fwdBtn, bwdBtn, progress, initialBtn, calcBtn, finalBtn].forEach(el => el.disabled = !on);
-      if(on){ hint.textContent = 'Loaded. Use the controls to play.'; }
-    }
-
-    // Click to pick file
-    shell.addEventListener('click', () => picker.click());
-    picker.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if(file){
-        const url = URL.createObjectURL(file);
-        loadVideo(url);
-      }
-    });
-
-    // Drag & drop
-    ['dragenter','dragover'].forEach(evt => {
-      shell.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); shell.classList.add('drag'); });
-    });
-    ['dragleave','drop'].forEach(evt => {
-      shell.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); shell.classList.remove('drag'); });
-    });
-    shell.addEventListener('drop', (e)=>{
-      const file = e.dataTransfer.files && e.dataTransfer.files[0];
-      if(file && file.type.startsWith('video/')){
-        const url = URL.createObjectURL(file);
-        loadVideo(url);
-      }
-    });
-
-    function loadVideo(src){
-      overlay?.classList.add('hidden');
-      video.src = src;
-      video.currentTime = 0;
-      video.load();
-      video.play().catch(()=>{});
-    }
-
-    // Update UI when metadata is ready
-    video.addEventListener('loadedmetadata', ()=>{
-      overlay?.classList.add('hidden');
-      enablePlayerUI(true);
-      updateProgressFromVideo();
-      updateEstimates();
-      refreshFootnote();
-    });
-
-    // Sync progress bar with playback
-    function updateProgressFromVideo(){
-      if (!isFinite(video.duration) || video.duration === 0) return;
-      const pct = (video.currentTime / video.duration) * 100;
-      progress.value = String(pct);
-      refreshFootnote();
-    }
-    video.addEventListener('timeupdate', updateProgressFromVideo);
-
-    // Seek by dragging the slider
-    progress.addEventListener('input', ()=>{
-      if (!isFinite(video.duration) || video.duration === 0) return;
-      const pct = parseFloat(progress.value)/100;
-      video.currentTime = video.duration * pct;
-    });
-
-    // Buttons (frame stepping)
-    function stepFrames(n=1){
-      const fps = Number.isFinite(fpsEstimate) ? fpsEstimate : 30;
-      const dt = 1 / fps;
-      const eps = Math.min(0.0005, dt/10);
-      const target = (video.currentTime || 0) + (n * dt) + (n > 0 ? eps : -eps);
-      video.pause();
-      const dur = video.duration || 0;
-      video.currentTime = Math.min(Math.max(target, 0), dur);
-      updateProgressFromVideo();
-    }
-
-    playBtn.addEventListener('click', ()=>{
-      if(video.paused) video.play(); else video.pause();
-    });
-    fwdBtn.addEventListener('click', ()=>{ stepFrames(+1); });
-    bwdBtn.addEventListener('click', ()=>{ stepFrames(-1); });
-
-    // Aux buttons dispatch
-    initialBtn?.addEventListener('click', ()=>{
-      document.dispatchEvent(new CustomEvent('vt:initial', {detail:{time: video.currentTime}}));
-    });
-    calcBtn?.addEventListener('click', ()=>{
-      document.dispatchEvent(new CustomEvent('vt:calculate', {detail:{time: video.currentTime}}));
-    });
-    finalBtn?.addEventListener('click', ()=>{
-      document.dispatchEvent(new CustomEvent('vt:final', {detail:{time: video.currentTime}}));
-    });
-
-    // Reflect play/pause state on button text
-    video.addEventListener('play', ()=>{ playBtn.textContent = '⏸︎ PAUSE'; if(fpsEstimate==null){ updateEstimates(); } });
-    video.addEventListener('pause', ()=>{ playBtn.textContent = '▶︎ PLAY'; });
-
-    // Keyboard shortcuts while focus is within the document
-    window.addEventListener('keydown', (e)=>{
-      if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
-      if(e.code === 'Space'){ e.preventDefault(); playBtn.click(); }
-      if(e.code === 'ArrowRight'){ e.preventDefault(); fwdBtn.click(); }
-      if(e.code === 'ArrowLeft'){ e.preventDefault(); bwdBtn.click(); }
-    });
-
-    // ARIA reflection for radios
-    document.querySelectorAll('input[type="radio"]').forEach(r => {
-      r.addEventListener('change', ()=>{
-        const group = document.querySelectorAll(`input[name="${r.name}"]`);
-        group.forEach(x => x.setAttribute('aria-checked', String(x.checked)));
-      });
-    });
-
-    // === Dynamic field logic for card_1 ===
-    const fieldArea = document.getElementById('typeFieldArea');
-    window.InDistance = null;
-    window.InDiameter = null;
-
-    function renderTypeInput(){
-      const mode = document.querySelector('input[name="mode"]:checked').value;
-      fieldArea.innerHTML = '';
-      if(mode === 'distance'){
-        const wrap = document.createElement('div');
-        wrap.style.display = 'flex';
-        wrap.style.flexDirection = 'column';
-        wrap.style.alignItems = 'center';
-
-        const inp = document.createElement('input');
-        inp.type = 'number';
-        inp.min = '0';
-        inp.step = 'any';
-        inp.inputMode = 'decimal';
-        inp.placeholder = 'Enter distance';
-        inp.className = 'num-input';
-        inp.addEventListener('input', ()=>{
-          const v = parseFloat(inp.value);
-          window.InDistance = (Number.isFinite(v) && v >= 0) ? v : null;
-        });
-        wrap.appendChild(inp);
-
-        const sel = document.createElement('select');
-        sel.className = 'num-input';
-        sel.setAttribute('aria-label','Distance unit');
-        const units = ['mm','cm','m','km','in','ft','yd','mi'];
-        units.forEach(u=>{
-          const opt = document.createElement('option');
-          opt.value = u; opt.textContent = u;
-          sel.appendChild(opt);
-        });
-        sel.value = 'mm';
-        window.InDistanceUnit = sel.value;
-        sel.addEventListener('change', ()=>{ window.InDistanceUnit = sel.value; updateLinearSpeed(); });
-        wrap.appendChild(sel);
-
-        fieldArea.appendChild(wrap);
-      } else if (mode === 'diameter'){
-        const wrap = document.createElement('div');
-        wrap.style.display = 'flex';
-        wrap.style.flexDirection = 'column';
-        wrap.style.alignItems = 'center';
-
-        const inp = document.createElement('input');
-        inp.type = 'number';
-        inp.min = '0';
-        inp.step = 'any';
-        inp.inputMode = 'decimal';
-        inp.placeholder = 'Enter diameter';
-        inp.className = 'num-input';
-        inp.addEventListener('input', ()=>{
-          const v = parseFloat(inp.value);
-          window.InDiameter = (Number.isFinite(v) && v >= 0) ? v : null;
-        });
-        wrap.appendChild(inp);
-
-        const sel = document.createElement('select');
-        sel.className = 'num-input';
-        sel.setAttribute('aria-label','Diameter unit');
-        const units = ['mm','cm','m','km','in','ft','yd','mi'];
-        units.forEach(u=>{
-          const opt = document.createElement('option');
-          opt.value = u; opt.textContent = u;
-          sel.appendChild(opt);
-        });
-        sel.value = 'mm';
-        window.InDiameterUnit = sel.value;
-        sel.addEventListener('change', ()=>{ window.InDiameterUnit = sel.value; updateLinearSpeed(); });
-        wrap.appendChild(sel);
-
-        fieldArea.appendChild(wrap);
-      } else {
-        const out = document.createElement('output');
-        out.className = 'output-pill';
-        out.textContent = 'One Revolution Measurement';
-        fieldArea.appendChild(out);
-      }
-    }
-
-    // re-render on mode change + reflect ARIA
-    document.querySelectorAll('input[name="mode"]').forEach(radio=>{
-      radio.addEventListener('change', ()=>{
-        const group = document.querySelectorAll('input[name="mode"]');
-        group.forEach(x => x.setAttribute('aria-checked', String(x.checked)));
-        renderTypeInput();
-        updateLinearSpeed();
-      });
-    });
-
-    // initial render
-    renderTypeInput();
-    updateLinearSpeed(); // init
-
-    // === Precise-ish FPS & total frames estimation ===
-    function snapToStdRates(fps){
-      const std = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60];
-      for(const r of std){ if(Math.abs(fps - r) < 0.02) return {value:r, snapped:true}; }
-      return {value:fps, snapped:false};
-    }
-
-    async function measureViaRVFC(maxFrames=120, maxMs=1500){
-      const support = ('requestVideoFrameCallback' in HTMLVideoElement.prototype) || ('requestVideoFrameCallback' in video);
-      if(!support) return null;
-      return await new Promise((resolve)=>{
-        let diffs=[]; let first=null; let last=null; let id=null; let frames=0;
-        const cb=(now, meta)=>{
-          if(first==null){ first=now; last=now; }
-          else { diffs.push(now-last); last=now; frames++; }
-          if(frames>=maxFrames || (now-first)>=maxMs){
-            const good = diffs.filter(d=>d>0 && d<1000);
-            if(good.length<5){ resolve(null); return; }
-            good.sort((a,b)=>a-b);
-            const med = good[Math.floor(good.length/2)];
-            resolve({fps: 1000/med, samples: good.length});
-            return;
-          }
-          id = video.requestVideoFrameCallback(cb);
-        };
-        try{ id = video.requestVideoFrameCallback(cb); } catch(e){ resolve(null); }
-      });
-    }
-
-    async function measureViaPlaybackQuality(sampleMs=1500){
-      const getQ = video.getVideoPlaybackQuality ? ()=>video.getVideoPlaybackQuality() : null;
-      if(!getQ) return null;
-      return await new Promise((resolve)=>{
-        const q0 = getQ();
-        if(!q0 || typeof q0.totalVideoFrames !== 'number'){ resolve(null); return; }
-        const startFrames = q0.totalVideoFrames;
-        const t0 = performance.now();
-        setTimeout(()=>{
-          const q1 = getQ();
-          const frames = (q1 && typeof q1.totalVideoFrames === 'number') ? (q1.totalVideoFrames - startFrames) : 0;
-          const dt = performance.now() - t0;
-          if(frames<=0 || dt<=0){ resolve(null); return; }
-          resolve({fps: (frames * 1000) / dt, framesDelta: frames});
-        }, sampleMs);
-      });
-    }
-
-    async function updateEstimates(){
-      setCalcBusy(true);
-      try{
-      try{
-        const prevPaused = video.paused; const prevRate = video.playbackRate; const prevMuted = video.muted;
-        video.playbackRate = 1; video.muted = true; if(prevPaused){ await video.play().catch(()=>{}); }
-        const [r1, r2] = await Promise.all([ measureViaRVFC(120,1500), measureViaPlaybackQuality(1500) ]);
-        let fps = r1?.fps || r2?.fps || null;
-        fpsPrecise = false;
-        if(fps){
-          if(r1?.fps && r2?.fps && Math.abs(r1.fps - r2.fps) < 0.2){ fps = (r1.fps + r2.fps)/2; }
-          const snap = snapToStdRates(fps);
-          fps = snap.value; fpsPrecise = snap.snapped;
-          fpsEstimate = fps;
-          if(isFinite(video.duration)) totalFrameEstimate = fps * video.duration;
-        }
-        refreshFootnote();
-        video.playbackRate = prevRate; video.muted = prevMuted; if(prevPaused) video.pause();
-      }catch(e){ /* noop */ }
-      }catch(e){ /* noop */ }
-      finally{ setCalcBusy(false); }
-
-    }
-
-    video.addEventListener('ratechange', refreshFootnote);
-    video.addEventListener('durationchange', ()=>{ if(Number.isFinite(fpsEstimate)) { totalFrameEstimate = fpsEstimate * video.duration; refreshFootnote(); } });
-  </script>
+  function openPicker(){picker.value='';picker.click()} overlay.addEventListener('click',e=>{e.stopPropagation();openPicker()});openVideoBtn.addEventListener('click',openPicker);picker.addEventListener('change',e=>{const file=e.target.files?.[0];if(file)loadVideoFile(file)});
+  ['dragenter','dragover'].forEach(evt=>shell.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();shell.classList.add('drag')}));['dragleave','drop'].forEach(evt=>shell.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();shell.classList.remove('drag')}));shell.addEventListener('drop',e=>{const file=e.dataTransfer.files?.[0];if(file)loadVideoFile(file)});
+  function resetMeasurement(){initialTime=undefined;finalTime=undefined;totalTime=undefined;lastFrameMediaTime=null;lastPresentedFrames=null;updateMarks();updateResult()}
+  function loadVideoFile(file){if(!file||file.size<=0)return;const token=++loadToken;currentFile=file;resetMeasurement();clearFps();pendingSliderTarget=null;isSeeking=false;calibrationBusy=false;setReadyControls(false);progress.value='0';showStatus(t('readingMetadata'),'info');if(currentObjectUrl)URL.revokeObjectURL(currentObjectUrl);currentObjectUrl=URL.createObjectURL(file);overlay.classList.add('hidden');hint.textContent=file.name;video.pause();video.removeAttribute('src');video.load();video.src=currentObjectUrl;video.load();detectFpsFromContainer(file,token)}
+  video.addEventListener('loadedmetadata',()=>{overlay.classList.add('hidden');video.pause();try{video.currentTime=0}catch(_){}setReadyControls(true);startFrameTracker();updateProgressFromVideo();refreshFootnote();if(fpsSource==='none')showStatus(`${t('loaded')} ${t('fpsNeed')}`,'warn')});video.addEventListener('loadeddata',()=>{video.pause();updateProgressFromVideo()});
+  video.addEventListener('error',()=>{const code=video.error?.code;let msg=t('videoErrorGeneric');if(code===1)msg=t('videoErrorAborted');else if(code===2)msg=t('videoErrorNetwork');else if(code===3)msg=t('videoErrorDecode');else if(code===4)msg=t('videoErrorSource');showStatus(msg,'error');setReadyControls(false);overlay.classList.remove('hidden')});
+  video.addEventListener('play',updatePlayButton);video.addEventListener('pause',updatePlayButton);video.addEventListener('durationchange',()=>{if(Number.isFinite(fpsEstimate)&&fpsSource!=='container')totalFrames=Math.round(video.duration*fpsEstimate);refreshFootnote()});
+  playBtn.addEventListener('click',()=>{if(video.paused)video.play().catch(()=>showStatus(t('videoErrorGeneric'),'error'));else video.pause()});fwdBtn.addEventListener('click',()=>stepFrames(1));bwdBtn.addEventListener('click',()=>stepFrames(-1));
+  function markCurrent(which){const tm=currentDisplayedTime();if(!Number.isFinite(tm)){showStatus(t('markUnavailable'),'warn');return}if(which==='initial')initialTime=tm;else finalTime=tm;totalTime=undefined;updateMarks();updateResult()} initialBtn.addEventListener('click',()=>markCurrent('initial'));finalBtn.addEventListener('click',()=>markCurrent('final'));
+  calcBtn.addEventListener('click',()=>{if(!Number.isFinite(initialTime)||!Number.isFinite(finalTime)||finalTime<=initialTime){totalTime=undefined;updateMarks();updateResult();showStatus(t('invalidInterval'),'warn');return}const mode=selectedMode();if(mode==='distance'&&!(Number(distanceInput.value)>0)){showStatus(t('invalidValue'),'warn');return}if(mode==='diameter'&&!(Number(diameterInput.value)>0)){showStatus(t('invalidValue'),'warn');return}if(mode==='revolutions'&&!(Number(revolutionCount.value)>=1)){showStatus(t('invalidRevs'),'warn');return}totalTime=finalTime-initialTime;updateMarks();updateResult();showStatus('','info')});
+  window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.code==='Space'){e.preventDefault();if(!playBtn.disabled)playBtn.click()}else if(e.code==='ArrowRight'){e.preventDefault();stepFrames(1)}else if(e.code==='ArrowLeft'){e.preventDefault();stepFrames(-1)}});
+  const aboutDlg=$('aboutDialog');$('aboutBtn').addEventListener('click',()=>aboutDlg.showModal?.());$('aboutClose').addEventListener('click',()=>aboutDlg.close());aboutDlg.addEventListener('click',e=>{if(e.target===aboutDlg)aboutDlg.close()});
+  window.addEventListener('beforeunload',()=>{if(currentObjectUrl)URL.revokeObjectURL(currentObjectUrl);if(frameCallbackId!==null&&typeof video.cancelVideoFrameCallback==='function'){try{video.cancelVideoFrameCallback(frameCallbackId)}catch(_){}}});
+  updateModeUI();updateMarks();updateFpsSource();refreshFootnote();updateResult();applyLanguage();setReadyControls(false);
+})();
+</script>
 </body>
 </html>

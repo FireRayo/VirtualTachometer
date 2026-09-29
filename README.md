@@ -1,176 +1,134 @@
 # VirtualTachometer
 
-[![Version](https://img.shields.io/badge/version-3.7-blue.svg)](https://github.com/FireRayo/VirtualTachometer)
+[![Version](https://img.shields.io/badge/version-3.9-blue.svg)](https://github.com/FireRayo/VirtualTachometer)
 [![HTML5](https://img.shields.io/badge/HTML5-single--file-orange.svg)](https://github.com/FireRayo/VirtualTachometer)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 **VirtualTachometer** is a browser-based industrial tachometer for measuring **linear speed** and **rotational speed (RPM)** from recorded video.
 
-It is designed for field work, commissioning, troubleshooting, maintenance, and machine validation when a physical tachometer is not available but a video can be recorded with a phone, camera, or other device.
+Designed for field work, commissioning, troubleshooting, maintenance, and machine validation when a physical tachometer is not available but a video can be recorded with a phone, camera, or other device.
 
 **Live application:**  
 https://firerayo.github.io/VirtualTachometer/
 
 **Author:** Raymundo Ortiz  
-**Current version:** V3.7
+**Current version:** V3.9
 
 ---
 
 ## Overview
 
-VirtualTachometer converts the elapsed time between two selected video frames into a speed value.
+VirtualTachometer calculates speed from the elapsed time between two selected video frames.
 
-Typical industrial applications include:
+Typical applications include:
 
 - Conveyor speed measurement
 - Package or bottle transport verification
 - Roller peripheral speed measurement
 - Shaft, pulley, wheel, or roller RPM measurement
-- Commissioning and troubleshooting of industrial machinery
+- Industrial commissioning and troubleshooting
 - Comparing commanded speed with observed mechanical speed
 
-The application runs directly in a modern browser using HTML5, CSS, and JavaScript. Video processing remains local to the browser.
+The application runs directly in a modern browser using HTML5, CSS, and JavaScript.
 
 ---
 
-## What's new in V3.7
+## What's new in V3.9
 
-V3.7 keeps the measurement engine introduced in V3.x and refines timing, frame navigation, usability, and controls.
+### Automatic unit conversion
 
-### Improved frame timing
+Changing the Distance or Diameter unit now converts the numeric value automatically while preserving the same physical length.
 
-For compatible MP4 / M4V / MOV files, VirtualTachometer reads timing information directly from the container:
-
-- `mdhd` — media timescale
-- `stts` — sample timing
-- `ctts` — composition offsets when present
-- common `elst` edit-list timing when present
-- real sample timestamps when a usable timing table can be built
-
-When real sample timestamps are available, frame navigation uses those timestamps instead of relying only on `1 / FPS`.
-
-### CFR and VFR handling
-
-- Constant Frame Rate (CFR) video is supported normally.
-- Variable Frame Rate (VFR) is detected from the timing table.
-- For VFR files with a usable sample-time table, BWD/FWD uses the actual sample timestamps.
-- If exact VFR sample timing is unavailable, frame stepping is disabled instead of pretending that average FPS is exact.
-
-### Presented-frame confirmation
-
-When supported, VirtualTachometer uses:
+Supported units:
 
 ```text
-requestVideoFrameCallback()
+mm / cm / m / km / in / ft / yd / mi
 ```
 
-and the reported:
+Examples:
 
 ```text
-mediaTime
+1000 mm  →  1 m
+1 m      →  100 cm
+1 m      →  1000 mm
+1 m      →  39.3700787402 in
+12 in    →  1 ft
+1 mi     →  1.609344 km
 ```
 
-to identify the frame actually presented by the browser.
+This behavior is available in both:
 
-After a seek, the application waits for frame confirmation before enabling **Start** and **End** whenever possible.
+- **Distance**
+- **Diameter**
 
-If the browser does not confirm the displayed frame in time, V3.7 falls back to `video.currentTime` as an **approximate frame** so Start/End do not remain permanently unavailable.
+The conversion preserves the physical measurement instead of changing only the unit label.
 
-### Stable seeking
+### Recalculation workflow
 
-Frame navigation includes:
+When any measurement variable changes, the previous result is invalidated.
 
-- Seek locking
-- Latest-wins slider behavior
-- Post-seek frame validation
-- Seek timeout recovery
-- Corrective seek attempts when the browser lands on a different frame
-- Approximate timestamp fallback when frame confirmation is unavailable
+This includes:
 
-### Multiple revolutions
+- Distance
+- Diameter
+- Observed revolutions
+- Distance unit
+- Diameter unit
+- Time unit
+- Measurement mode
+- Start frame
+- End frame
 
-Both **Diameter** and **Revolutions** modes support multiple observed revolutions.
+Pressing **Compute** always recalculates the result using the current values.
 
-This allows longer measurement intervals and reduces the relative influence of frame timing resolution.
-
-### Updated controls
-
-The main playback controls now use **Google Material Symbols Rounded**:
-
-- `play_circle`
-- `pause_circle`
-- `fast_forward`
-- `fast_rewind`
-
-The visible measurement/action labels remain consistent across languages:
-
-- **Open Video**
-- **Start**
-- **Compute**
-- **End**
-- **Autotune**
-
-The interface still supports English, Spanish, and Italian for the remaining UI text and accessibility labels.
+This prevents an old result from remaining visible after measurement parameters are changed.
 
 ---
 
 ## Main features
 
-- Runs directly in a modern web browser
-- Single-file HTML5 application
-- No installation required
-- No backend or account required
-- Video remains local to the browser
-- Drag-and-drop video loading
 - Distance, Diameter, and Revolutions modes
 - Linear speed calculation
-- Roller peripheral speed calculation
 - RPM calculation
-- Multiple-revolution measurements
+- Multiple observed revolutions
+- Automatic metric/imperial unit conversion
+- Explicit recalculation with **Compute**
 - Frame-by-frame BWD/FWD navigation
 - Keyboard `←` / `→` frame stepping
-- Progress slider with controlled asynchronous seeking
-- MP4/MOV timing-table inspection
-- CFR/VFR detection
-- Real sample timestamp navigation when available
-- Manual FPS entry
-- Explicit FPS autotuning
-- `requestVideoFrameCallback()` frame confirmation when available
-- Approximate fallback when frame confirmation is unavailable
+- CFR and VFR timing support
+- MP4/MOV timing analysis
+- Real sample timestamps when available
+- `stts`, `ctts`, and common `elst` handling
+- `requestVideoFrameCallback()` frame confirmation
+- Seek locking and timeout recovery
+- Approximate timestamp fallback when required
+- Manual FPS input
+- FPS **Autotune**
 - Timing-resolution estimate
-- Video decoding/error messages
 - English, Spanish, and Italian interface
+- Google Material Symbols playback controls
 - Persistent preferences with `localStorage`
-- Responsive desktop/mobile layout
-
----
-
-## Screenshot
-
-![VirtualTachometer](assets/IMG01.JPG)
-
-> The screenshot may show an earlier visual revision. The live GitHub Pages version reflects the current interface.
+- Single-file HTML5 application
 
 ---
 
 # Measurement modes
 
-## 1. Distance
+## Distance
 
 Use this mode when an object travels a known linear distance.
 
 ### Procedure
 
-1. Measure a known physical distance.
-2. Record the moving object passing the reference points.
-3. Open the video.
-4. Select **Distance**.
-5. Enter the distance and unit.
-6. Navigate to the first reference frame and press **Start**.
-7. Navigate to the final reference frame and press **End**.
-8. Press **Compute**.
+1. Open the video.
+2. Select **Distance**.
+3. Enter the known distance.
+4. Select the desired unit.
+5. Navigate to the first reference frame and press **Start**.
+6. Navigate to the final reference frame and press **End**.
+7. Press **Compute**.
 
-The application calculates:
+Calculation:
 
 ```text
 Elapsed Time = End Time - Start Time
@@ -189,7 +147,7 @@ Speed = 500 mm/s
 
 ---
 
-## 2. Diameter
+## Diameter
 
 Use this mode to calculate the peripheral speed of a roller, wheel, pulley, or similar rotating component.
 
@@ -199,7 +157,7 @@ Enter:
 - Diameter unit
 - Observed revolutions
 
-The calculation is:
+Calculation:
 
 ```text
 Linear Speed =
@@ -218,15 +176,13 @@ Elapsed Time = 2.500 s
 Speed ≈ 628.319 mm/s
 ```
 
-Using several complete revolutions is normally more reliable than measuring only one.
+Using several complete revolutions generally improves measurement resolution.
 
 ---
 
-## 3. Revolutions
+## Revolutions
 
 Use this mode to calculate rotational speed directly in RPM.
-
-Enter the number of complete observed revolutions and mark the beginning and end of the interval.
 
 ```text
 RPM = 60 × Observed Revolutions / Elapsed Time
@@ -243,9 +199,9 @@ RPM = 150 RPM
 
 ---
 
-# Supported units
+# Unit conversion
 
-Distance and diameter fields support:
+Distance and Diameter support:
 
 | Metric | Imperial / US customary |
 |---|---|
@@ -254,25 +210,56 @@ Distance and diameter fields support:
 | m | yd |
 | km | mi |
 
-Time basis:
+When the selected unit changes, VirtualTachometer automatically converts the current numeric value.
+
+Example:
+
+```text
+1000 mm
+```
+
+changed to meters becomes:
+
+```text
+1 m
+```
+
+The physical distance remains the same.
+
+---
+
+# Time units
+
+Speed results can be displayed using:
 
 - `/s`
 - `/min`
 - `/h`
 
-Rotational speed is displayed in:
+For example:
 
 ```text
-RPM
+mm/s
+m/min
+ft/min
+km/h
 ```
+
+Changing the time unit invalidates the previous result. Press **Compute** to calculate again using the selected time basis.
 
 ---
 
 # FPS and frame navigation
 
-## Why FPS matters
+VirtualTachometer does not silently assume 30 FPS.
 
-For CFR video, the nominal frame duration is approximately:
+FPS can come from:
+
+- MP4/MOV container timing
+- Manual entry
+- **Autotune**
+
+For CFR video:
 
 ```text
 Frame duration ≈ 1 / FPS
@@ -288,89 +275,103 @@ Frame duration ≈ 1 / FPS
 | 120 | 8.33 ms |
 | 240 | 4.17 ms |
 
-VirtualTachometer does **not** silently assume 30 FPS when the frame rate is unknown.
-
-FPS can come from:
-
-- MP4/MOV container timing
-- Manual entry
-- **Autotune**
-
 ---
 
 ## MP4/MOV timing analysis
 
-For compatible ISO Base Media / QuickTime-style files, VirtualTachometer inspects the video track timing directly.
+For compatible ISO Base Media / QuickTime-style files, VirtualTachometer reads timing information from the video track.
 
-Where available, it can build a sample-time table from container metadata and use it for frame navigation.
+Supported timing structures include:
 
-This is especially important for VFR content because:
+- `mdhd` — media timescale
+- `stts` — sample timing
+- `ctts` — composition offsets
+- common `elst` edit lists
+
+When a usable timing table can be constructed, frame stepping uses real sample timestamps instead of relying only on:
 
 ```text
-1 / average FPS
+1 / FPS
 ```
 
-does not represent every individual frame interval.
+This is especially important for VFR video.
 
-Fragmented MP4 files that do not expose a complete timing table in `moov` are handled conservatively: the application does not claim exact frame stepping when the required timing information is unavailable.
+---
+
+## CFR and VFR
+
+### CFR
+
+Constant Frame Rate video is handled normally.
+
+### VFR
+
+Variable Frame Rate is detected from the timing table.
+
+When exact sample timestamps are available:
+
+- BWD/FWD navigates using actual sample times.
+- Current frame estimation uses the sample-time table.
+
+When exact VFR timing is unavailable, VirtualTachometer avoids presenting average-FPS stepping as exact.
+
+---
+
+# Presented-frame confirmation
+
+When supported, the application uses:
+
+```javascript
+HTMLVideoElement.requestVideoFrameCallback()
+```
+
+and its:
+
+```text
+mediaTime
+```
+
+to identify the frame actually presented by the browser.
+
+After seeking, the application waits for frame confirmation whenever possible.
+
+If the browser does not confirm the frame in time, VirtualTachometer falls back to:
+
+```text
+video.currentTime
+```
+
+as an approximate timestamp so **Start** and **End** remain usable.
 
 ---
 
 # Accuracy and timing resolution
 
-Video-based measurement is inherently limited by the temporal resolution of the recording.
+Video measurement is limited by the temporal resolution of the recording.
 
-For CFR video:
+Higher FPS generally improves temporal resolution.
 
-```text
-Approximate one-frame duration = 1 / FPS
-```
+V3.9 estimates timing resolution using local frame timing when available.
 
-V3.7 estimates timing resolution from the local frame duration around the Start and End marks when sample timestamps are available.
-
-The displayed estimate does **not** include every possible physical source of error, such as:
+The displayed estimate does not include every physical source of uncertainty, including:
 
 - Browser seek behavior
 - Motion blur
-- Camera exposure
 - Rolling shutter
+- Camera exposure
 - Reference-mark selection error
 - Incorrect physical distance or diameter
-- Video encoding artifacts
+- Video compression artifacts
 
 For better measurements:
 
-1. Use the highest practical FPS.
-2. Prefer CFR video when possible.
-3. Measure over a longer interval.
+1. Prefer high-frame-rate video.
+2. Prefer CFR when possible.
+3. Measure over longer intervals.
 4. Use several complete revolutions.
 5. Keep the camera stable.
-6. Use clear, high-contrast reference marks.
+6. Use high-contrast reference marks.
 7. Avoid excessive motion blur.
-
----
-
-# Frame-accurate behavior: important limitation
-
-VirtualTachometer improves frame navigation by using container sample timestamps and `requestVideoFrameCallback()` when available, but video decoding still relies on the browser's HTML `<video>` implementation.
-
-A seek such as:
-
-```javascript
-video.currentTime = target;
-```
-
-is not guaranteed to provide deterministic, sample-exact seeking for every codec, GOP structure, browser, or file.
-
-Therefore:
-
-- Frame stepping is best effort at the browser level.
-- Long-GOP H.264/H.265 files may be slower when stepping backward.
-- Browser codec and container support still apply.
-- A confirmed `mediaTime` is preferred when available.
-- Approximate `currentTime` is used as a fallback when necessary.
-
-A future architecture requiring deterministic decoded-frame indexing would require a dedicated demuxer and decoder, such as a WebCodecs-based pipeline.
 
 ---
 
@@ -378,34 +379,39 @@ A future architecture requiring deterministic decoded-frame indexing would requi
 
 ## Video
 
-- **Open Video** — select a local video file
-- **Play Circle** — start playback
-- **Pause Circle** — pause playback
-- **Fast Rewind** — request one frame backward
-- **Fast Forward** — request one frame forward
-- **← / →** — keyboard frame navigation
-- **Progress bar** — seek through the video
+The playback controls use **Google Material Symbols Rounded**:
 
-The four playback/navigation buttons are displayed using Google Material Symbols.
+- `play_circle`
+- `pause_circle`
+- `fast_rewind`
+- `fast_forward`
+
+Functions:
+
+- **Open Video** — select a local video
+- Play icon — start playback
+- Pause icon — pause playback
+- Fast Rewind icon — one frame backward
+- Fast Forward icon — one frame forward
+- `← / →` — keyboard frame navigation
+- Progress bar — seek through the video
 
 ## Measurement
 
 - **Start** — store the starting timestamp
 - **End** — store the ending timestamp
-- **Compute** — calculate elapsed time and speed
+- **Compute** — calculate using all current measurement values
 
 ## FPS
 
 - **Frame rate (FPS)** — detected or manually entered frame rate
-- **Autotune** — explicitly estimate FPS from displayed-frame timing when supported
+- **Autotune** — estimate FPS from displayed-frame timing when supported
 
 ---
 
 # Video compatibility
 
-The application accepts video files supported by the current browser.
-
-Automatic container timing analysis is specifically implemented for compatible:
+Automatic container timing analysis is implemented for compatible:
 
 ```text
 .mp4
@@ -414,7 +420,7 @@ Automatic container timing analysis is specifically implemented for compatible:
 .qt
 ```
 
-Other formats may still play if supported by the browser, but FPS or sample timing may need to be entered or estimated manually.
+Other formats may still play if supported by the browser, but FPS or timing information may need to be entered manually or estimated with **Autotune**.
 
 Common MP4/H.264 video generally provides the widest browser compatibility.
 
@@ -422,23 +428,19 @@ Common MP4/H.264 video generally provides the widest browser compatibility.
 
 # Privacy
 
-VirtualTachometer processes the selected video locally in the browser.
+Selected videos are processed locally in the browser.
 
-The application does not require a backend and does not intentionally upload the selected video to a server.
-
-Users should still follow their organization's security and data-handling policies.
+VirtualTachometer does not require a backend or account and does not intentionally upload the selected video to a server.
 
 ---
 
-# Installation
+# Use
 
-No installation is required.
-
-## Option 1 — Use online
+## Online
 
 https://firerayo.github.io/VirtualTachometer/
 
-## Option 2 — Run locally
+## Local
 
 Download:
 
@@ -448,9 +450,11 @@ index.html
 
 and open it in a modern browser.
 
-The application itself is a single HTML file. V3.7 uses the **Google Material Symbols Rounded** web font for the playback/navigation icons, so those icons require internet access unless the font is already cached by the browser.
+The application itself is a single HTML file.
 
-## Option 3 — Clone the repository
+Google Material Symbols are loaded as a web font, so the playback/navigation icons require internet access unless the font is already cached by the browser.
+
+## Clone
 
 ```bash
 git clone https://github.com/FireRayo/VirtualTachometer.git
@@ -465,7 +469,11 @@ index.html
 
 ---
 
-# Repository structure
+# Repository
+
+https://github.com/FireRayo/VirtualTachometer
+
+Typical structure:
 
 ```text
 VirtualTachometer/
@@ -478,70 +486,63 @@ VirtualTachometer/
 
 ---
 
-# Browser notes
-
-VirtualTachometer is intended for modern browsers with HTML5 video support.
-
-The best frame-awareness is available when the browser supports:
-
-```javascript
-HTMLVideoElement.requestVideoFrameCallback()
-```
-
-If this API is unavailable, the application continues using HTML video timing with reduced presented-frame awareness.
-
----
-
 # Version history
+
+## V3.9
+
+- Added automatic numeric conversion when changing Distance or Diameter units.
+- Supports conversion between `mm`, `cm`, `m`, `km`, `in`, `ft`, `yd`, and `mi`.
+- Preserves the same physical measurement when changing units.
+- Keeps the explicit Compute workflow introduced in V3.8.
+
+## V3.8
+
+- Any measurement-variable change invalidates the previous result.
+- **Compute** always re-reads the current values and recalculates from scratch.
+- Updated handling for Distance, Diameter, revolutions, units, time basis, Start, and End changes.
 
 ## V3.7
 
-- Updated playback/navigation controls to Google Material Symbols Rounded.
+- Added Google Material Symbols Rounded playback/navigation controls.
 - Play/Pause dynamically switches between `play_circle` and `pause_circle`.
 - BWD/FWD use `fast_rewind` and `fast_forward`.
-- Preserved frame-stepping logic and accessibility labels.
 
 ## V3.6
 
 - Fixed Start/End becoming unavailable after some FWD/BWD operations.
-- Added approximate `currentTime` fallback when presented-frame confirmation times out.
-- Start/End remain usable after seek recovery.
+- Added approximate `currentTime` fallback when displayed-frame confirmation times out.
 
-## V3.5
+## V3.1–V3.5
 
-- Standardized playback text internally to PLAY / PAUSE before the icon-based V3.7 interface.
-
-## V3.1–V3.2 timing improvements
-
-- Added real sample timestamp tables for compatible MP4/MOV files.
-- Added `ctts` composition-offset handling.
+- Added MP4/MOV sample timestamp tables.
+- Added `ctts` composition offsets.
 - Added common `elst` edit-list handling.
 - Improved VFR navigation.
-- Added post-seek frame confirmation and corrective seeking.
+- Added post-seek frame confirmation.
 - Added seek timeout recovery.
 - Added multiple revolutions to Diameter mode.
 - Improved timing-resolution reporting.
-- Preserved exact container frame counts when available.
 - Removed silent nominal FPS snapping from calibrated FPS.
+- Standardized main control labels.
 
 ## V3.0
 
 - Redesigned FPS handling.
-- Added MP4/MOV timing-table FPS detection.
+- Added MP4/MOV timing detection.
 - Added VFR detection.
 - Removed hidden 30 FPS fallback.
-- Added manual FPS entry and explicit FPS recalibration.
-- Added seek locking and latest-wins slider behavior.
+- Added manual FPS entry and recalibration.
+- Added seek locking.
 - Added `requestVideoFrameCallback()` timestamp tracking.
 - Added multiple observed revolutions for RPM measurement.
-- Added persistent preferences through `localStorage`.
+- Added persistent preferences.
 - Added English, Spanish, and Italian interfaces.
 
 ---
 
 # License
 
-This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+Licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 
 See [LICENSE](LICENSE).
 
@@ -566,6 +567,6 @@ https://firerayo.github.io/VirtualTachometer/
 
 VirtualTachometer is a measurement aid based on recorded video timing.
 
-Results can be affected by frame rate, variable frame timing, compression, dropped frames, motion blur, camera exposure, browser decoding behavior, seek accuracy, and the user's selection of Start and End frames.
+Results may be affected by frame rate, variable frame timing, compression, dropped frames, motion blur, camera exposure, browser decoding behavior, seek accuracy, and Start/End frame selection.
 
-For safety-critical calibration, certification, regulatory verification, or metrology applications, use properly calibrated measurement equipment and an appropriate validated measurement procedure.
+For safety-critical calibration, certification, regulatory verification, or metrology applications, use properly calibrated measurement equipment and a validated measurement procedure.

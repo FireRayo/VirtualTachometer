@@ -1,24 +1,25 @@
 # VirtualTachometer
 
-[![Version](https://img.shields.io/badge/version-3.9-blue.svg)](https://github.com/FireRayo/VirtualTachometer)
+[![Version](https://img.shields.io/badge/version-4.0-blue.svg)](https://github.com/FireRayo/VirtualTachometer)
 [![HTML5](https://img.shields.io/badge/HTML5-single--file-orange.svg)](https://github.com/FireRayo/VirtualTachometer)
+[![Offline](https://img.shields.io/badge/offline-ready-success.svg)](https://github.com/FireRayo/VirtualTachometer)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 **VirtualTachometer** is a browser-based industrial tachometer for measuring **linear speed** and **rotational speed (RPM)** from recorded video.
 
-Designed for field work, commissioning, troubleshooting, maintenance, and machine validation when a physical tachometer is not available but a video can be recorded with a phone, camera, or other device.
+It is designed for field service, commissioning, troubleshooting, maintenance, machine validation, conveyor checks, roller measurements, and other industrial applications where speed must be estimated from video.
 
 **Live application:**  
 https://firerayo.github.io/VirtualTachometer/
 
 **Author:** Raymundo Ortiz  
-**Current version:** V3.9
+**Current version:** V4.0
 
 ---
 
 ## Overview
 
-VirtualTachometer calculates speed from the elapsed time between two selected video frames.
+VirtualTachometer measures the elapsed time between two selected video frames and calculates speed from a known distance, diameter, or number of revolutions.
 
 Typical applications include:
 
@@ -26,68 +27,143 @@ Typical applications include:
 - Package or bottle transport verification
 - Roller peripheral speed measurement
 - Shaft, pulley, wheel, or roller RPM measurement
-- Industrial commissioning and troubleshooting
-- Comparing commanded speed with observed mechanical speed
+- Machine commissioning and troubleshooting
+- Comparing commanded and observed mechanical speed
+- Quick field measurements when a physical tachometer is not available
 
 The application runs directly in a modern browser using HTML5, CSS, and JavaScript.
 
 ---
 
-## What's new in V3.9
+# What's new in V4.0
 
-### Automatic unit conversion
+V4.0 is a major architectural and interface revision focused on **offline operation, maintainability, visual consistency, and robustness**.
 
-Changing the Distance or Diameter unit now converts the numeric value automatically while preserving the same physical length.
+## Fully self-contained HTML5 application
 
-Supported units:
+V4.0 is distributed as a **single `.html` file** containing everything required by the application:
 
-```text
-mm / cm / m / km / in / ft / yd / mi
-```
+- HTML
+- CSS
+- JavaScript
+- SVG icons
+- UI graphics
+- Light/Dark themes
+- Measurement logic
+- MP4/MOV timing parser
 
-Examples:
+There are:
 
-```text
-1000 mm  →  1 m
-1 m      →  100 cm
-1 m      →  1000 mm
-1 m      →  39.3700787402 in
-12 in    →  1 ft
-1 mi     →  1.609344 km
-```
+- No CDN dependencies
+- No remote JavaScript libraries
+- No external fonts
+- No external icon libraries
+- No online resources required for normal operation
 
-This behavior is available in both:
-
-- **Distance**
-- **Diameter**
-
-The conversion preserves the physical measurement instead of changing only the unit label.
-
-### Recalculation workflow
-
-When any measurement variable changes, the previous result is invalidated.
-
-This includes:
-
-- Distance
-- Diameter
-- Observed revolutions
-- Distance unit
-- Diameter unit
-- Time unit
-- Measurement mode
-- Start frame
-- End frame
-
-Pressing **Compute** always recalculates the result using the current values.
-
-This prevents an old result from remaining visible after measurement parameters are changed.
+The application can therefore be opened directly from the local filesystem and used without an Internet connection.
 
 ---
 
-## Main features
+## New Neomorphism / Soft UI interface
 
-- Distance, Diameter, and Revolutions modes
+The complete interface was redesigned using **Neomorphism / Soft UI**.
+
+Two complete themes are included:
+
+- **Light**
+- **Dark**
+
+The selected theme can be changed from the interface and is stored locally.
+
+### Light theme
+
+```text
+Background:      #DFE4EA
+Surface:         #E5E9EE
+Shadow light:    #FFFFFF
+Shadow dark:     #C2C6CA
+Text:            #30363B
+Muted text:      #687078
+Accent light:    #6C9EFF
+Accent:          #557BD9
+Accent dark:     #526FC0
+```
+
+### Dark theme
+
+```text
+Background:      #20252B
+Surface:         #272C33
+Shadow light:    #323841
+Shadow dark:     #181C21
+Text:            #E6EAF0
+Muted text:      #9CA6B2
+Accent light:    #739DF2
+Accent:          #5C7FD6
+Accent dark:     #4868B8
+```
+
+Cards and buttons use raised dual-shadow surfaces, while inputs, selectors, sliders, and editable controls use inset Neomorphic surfaces.
+
+---
+
+## Offline SVG controls
+
+The playback controls are now embedded directly as SVG graphics.
+
+No icon font is required.
+
+Included controls:
+
+- Play
+- Pause
+- Fast Rewind
+- Fast Forward
+
+This replaces the external Material Symbols dependency used by V3.7–V3.9.
+
+---
+
+## Maintainable internal architecture
+
+The V4.0 source code was reorganized to make diagnosis and future modifications easier.
+
+The application is divided logically into responsibilities such as:
+
+- Configuration
+- Application state
+- Preferences
+- Internationalization
+- Theme management
+- Unit conversion
+- Measurement calculations
+- Video loading
+- Frame tracking
+- Seeking
+- FPS handling
+- MP4/MOV timing parsing
+- UI rendering
+- Error handling
+
+Technical identifiers remain in English, while important internal documentation and comments are written in **Spanish** to explain:
+
+- What each section does
+- Why the implementation exists
+- How the state flows through the application
+- What should be modified when behavior needs to change
+
+---
+
+# Main features
+
+- Single-file HTML5 application
+- Completely self-contained
+- Offline operation
+- Light and Dark Neomorphism themes
+- Responsive desktop/mobile layout
+- Distance mode
+- Diameter mode
+- Revolutions mode
 - Linear speed calculation
 - RPM calculation
 - Multiple observed revolutions
@@ -95,38 +171,40 @@ This prevents an old result from remaining visible after measurement parameters 
 - Explicit recalculation with **Compute**
 - Frame-by-frame BWD/FWD navigation
 - Keyboard `←` / `→` frame stepping
-- CFR and VFR timing support
-- MP4/MOV timing analysis
+- Controlled asynchronous seeking
+- MP4/MOV timing-table inspection
+- CFR/VFR detection
 - Real sample timestamps when available
 - `stts`, `ctts`, and common `elst` handling
-- `requestVideoFrameCallback()` frame confirmation
-- Seek locking and timeout recovery
-- Approximate timestamp fallback when required
-- Manual FPS input
+- `requestVideoFrameCallback()` support
+- Post-seek frame confirmation
+- Approximate timestamp fallback
+- Manual FPS entry
 - FPS **Autotune**
 - Timing-resolution estimate
-- English, Spanish, and Italian interface
-- Google Material Symbols playback controls
+- Video decoding/error messages
+- English, Spanish, and Italian UI
 - Persistent preferences with `localStorage`
-- Single-file HTML5 application
 
 ---
 
 # Measurement modes
 
-## Distance
+## 1. Distance
 
 Use this mode when an object travels a known linear distance.
 
 ### Procedure
 
-1. Open the video.
+1. Open a video.
 2. Select **Distance**.
 3. Enter the known distance.
 4. Select the desired unit.
-5. Navigate to the first reference frame and press **Start**.
-6. Navigate to the final reference frame and press **End**.
-7. Press **Compute**.
+5. Navigate to the first reference frame.
+6. Press **Start**.
+7. Navigate to the final reference frame.
+8. Press **End**.
+9. Press **Compute**.
 
 Calculation:
 
@@ -147,7 +225,7 @@ Speed = 500 mm/s
 
 ---
 
-## Diameter
+## 2. Diameter
 
 Use this mode to calculate the peripheral speed of a roller, wheel, pulley, or similar rotating component.
 
@@ -176,13 +254,15 @@ Elapsed Time = 2.500 s
 Speed ≈ 628.319 mm/s
 ```
 
-Using several complete revolutions generally improves measurement resolution.
+Using several complete revolutions usually improves the effective timing resolution.
 
 ---
 
-## Revolutions
+## 3. Revolutions
 
 Use this mode to calculate rotational speed directly in RPM.
+
+Calculation:
 
 ```text
 RPM = 60 × Observed Revolutions / Elapsed Time
@@ -199,44 +279,67 @@ RPM = 150 RPM
 
 ---
 
-# Unit conversion
+# Automatic unit conversion
 
 Distance and Diameter support:
 
-| Metric | Imperial / US customary |
-|---|---|
-| mm | in |
-| cm | ft |
-| m | yd |
-| km | mi |
-
-When the selected unit changes, VirtualTachometer automatically converts the current numeric value.
-
-Example:
-
 ```text
-1000 mm
+mm / cm / m / km / in / ft / yd / mi
 ```
 
-changed to meters becomes:
+Changing the selected unit automatically converts the numeric value while preserving the same physical length.
+
+Examples:
 
 ```text
-1 m
+1000 mm  →  1 m
+1 m      →  100 cm
+1 m      →  1000 mm
+1 m      →  39.3700787402 in
+12 in    →  1 ft
+1 mi     →  1.609344 km
 ```
 
-The physical distance remains the same.
+This applies to both:
+
+- Distance
+- Diameter
+
+An empty field remains empty when its unit is changed.
+
+---
+
+# Compute workflow
+
+Changing any measurement variable invalidates the previous result.
+
+This includes:
+
+- Measurement mode
+- Distance
+- Diameter
+- Observed revolutions
+- Distance unit
+- Diameter unit
+- Time unit
+- Start frame
+- End frame
+
+Pressing **Compute** always reads the current values and performs a new calculation.
+
+This prevents an old result from being displayed after the measurement parameters have changed.
 
 ---
 
 # Time units
 
-Speed results can be displayed using:
+Linear-speed results can be displayed using:
 
 - `/s`
 - `/min`
 - `/h`
 
-For example:
+Examples:
 
 ```text
 mm/s
@@ -245,7 +348,11 @@ ft/min
 km/h
 ```
 
-Changing the time unit invalidates the previous result. Press **Compute** to calculate again using the selected time basis.
+Rotational speed is displayed in:
+
+```text
+RPM
+```
 
 ---
 
@@ -277,9 +384,9 @@ Frame duration ≈ 1 / FPS
 
 ---
 
-## MP4/MOV timing analysis
+# MP4/MOV timing analysis
 
-For compatible ISO Base Media / QuickTime-style files, VirtualTachometer reads timing information from the video track.
+For compatible ISO Base Media / QuickTime-style files, VirtualTachometer reads video-track timing information directly from the container.
 
 Supported timing structures include:
 
@@ -288,38 +395,39 @@ Supported timing structures include:
 - `ctts` — composition offsets
 - common `elst` edit lists
 
-When a usable timing table can be constructed, frame stepping uses real sample timestamps instead of relying only on:
+When a usable sample-time table can be generated, frame navigation uses actual sample timestamps instead of relying only on:
 
 ```text
 1 / FPS
 ```
 
-This is especially important for VFR video.
+This is especially useful for Variable Frame Rate video.
 
 ---
 
-## CFR and VFR
+# CFR and VFR
 
-### CFR
+## CFR
 
 Constant Frame Rate video is handled normally.
 
-### VFR
+## VFR
 
 Variable Frame Rate is detected from the timing table.
 
 When exact sample timestamps are available:
 
-- BWD/FWD navigates using actual sample times.
-- Current frame estimation uses the sample-time table.
+- BWD/FWD uses real sample timing
+- Frame indexing uses the sample-time table
+- Measurement marks use displayed-frame timestamps whenever possible
 
-When exact VFR timing is unavailable, VirtualTachometer avoids presenting average-FPS stepping as exact.
+If exact VFR timing is unavailable, VirtualTachometer avoids presenting average-FPS stepping as exact.
 
 ---
 
 # Presented-frame confirmation
 
-When supported, the application uses:
+When supported by the browser, VirtualTachometer uses:
 
 ```javascript
 HTMLVideoElement.requestVideoFrameCallback()
@@ -331,9 +439,9 @@ and its:
 mediaTime
 ```
 
-to identify the frame actually presented by the browser.
+to identify the frame actually presented.
 
-After seeking, the application waits for frame confirmation whenever possible.
+After a seek, the application waits for frame confirmation whenever possible.
 
 If the browser does not confirm the frame in time, VirtualTachometer falls back to:
 
@@ -347,13 +455,13 @@ as an approximate timestamp so **Start** and **End** remain usable.
 
 # Accuracy and timing resolution
 
-Video measurement is limited by the temporal resolution of the recording.
+Video-based measurement is inherently limited by the temporal resolution of the recording.
 
-Higher FPS generally improves temporal resolution.
+Higher FPS generally improves timing resolution.
 
-V3.9 estimates timing resolution using local frame timing when available.
+VirtualTachometer estimates timing resolution using local frame timing when available.
 
-The displayed estimate does not include every physical source of uncertainty, including:
+The displayed estimate does not include every possible physical source of uncertainty, including:
 
 - Browser seek behavior
 - Motion blur
@@ -363,14 +471,14 @@ The displayed estimate does not include every physical source of uncertainty, in
 - Incorrect physical distance or diameter
 - Video compression artifacts
 
-For better measurements:
+For better results:
 
 1. Prefer high-frame-rate video.
 2. Prefer CFR when possible.
 3. Measure over longer intervals.
 4. Use several complete revolutions.
 5. Keep the camera stable.
-6. Use high-contrast reference marks.
+6. Use clear, high-contrast reference marks.
 7. Avoid excessive motion blur.
 
 ---
@@ -379,33 +487,39 @@ For better measurements:
 
 ## Video
 
-The playback controls use **Google Material Symbols Rounded**:
-
-- `play_circle`
-- `pause_circle`
-- `fast_rewind`
-- `fast_forward`
-
-Functions:
-
-- **Open Video** — select a local video
+- **Open Video** — select a local video file
 - Play icon — start playback
 - Pause icon — pause playback
 - Fast Rewind icon — one frame backward
 - Fast Forward icon — one frame forward
 - `← / →` — keyboard frame navigation
-- Progress bar — seek through the video
+- Progress slider — seek through the video
 
 ## Measurement
 
 - **Start** — store the starting timestamp
 - **End** — store the ending timestamp
-- **Compute** — calculate using all current measurement values
+- **Compute** — calculate using all current measurement parameters
 
 ## FPS
 
 - **Frame rate (FPS)** — detected or manually entered frame rate
 - **Autotune** — estimate FPS from displayed-frame timing when supported
+
+## Interface
+
+- Language selector — English / Español / Italiano
+- Theme selector — Light / Dark
+
+---
+
+# Test videos
+
+Test videos for checking FPS detection, frame navigation, timing, and measurement behavior are available in the repository:
+
+https://github.com/FireRayo/VirtualTachometer/tree/main/assets
+
+These files can be used to verify the application after changes to timing, seeking, FPS detection, or measurement logic.
 
 ---
 
@@ -422,25 +536,13 @@ Automatic container timing analysis is implemented for compatible:
 
 Other formats may still play if supported by the browser, but FPS or timing information may need to be entered manually or estimated with **Autotune**.
 
-Common MP4/H.264 video generally provides the widest browser compatibility.
+Common MP4/H.264 files generally provide the widest browser compatibility.
 
 ---
 
-# Privacy
+# Offline use
 
-Selected videos are processed locally in the browser.
-
-VirtualTachometer does not require a backend or account and does not intentionally upload the selected video to a server.
-
----
-
-# Use
-
-## Online
-
-https://firerayo.github.io/VirtualTachometer/
-
-## Local
+V4.0 is designed to operate independently from the Internet.
 
 Download:
 
@@ -448,24 +550,32 @@ Download:
 index.html
 ```
 
-and open it in a modern browser.
+and open it directly in a modern browser.
 
-The application itself is a single HTML file.
+All required application resources are contained in the HTML file itself.
 
-Google Material Symbols are loaded as a web font, so the playback/navigation icons require internet access unless the font is already cached by the browser.
+No web font, CDN, remote library, or external UI dependency is required.
 
-## Clone
+---
 
-```bash
-git clone https://github.com/FireRayo/VirtualTachometer.git
-cd VirtualTachometer
-```
+# Online use
 
-Then open:
+https://firerayo.github.io/VirtualTachometer/
 
-```text
-index.html
-```
+---
+
+# Privacy
+
+The selected video is processed locally in the browser.
+
+VirtualTachometer does not require:
+
+- A backend
+- An account
+- A cloud service
+- Video upload
+
+Users should still follow their organization's security and data-handling policies when working with industrial or confidential video.
 
 ---
 
@@ -481,31 +591,72 @@ VirtualTachometer/
 ├── README.md
 ├── LICENSE
 └── assets/
-    └── IMG01.JPG
+    ├── test videos
+    └── other project assets
+```
+
+---
+
+# Installation
+
+No installation is required.
+
+## Option 1 — Online
+
+https://firerayo.github.io/VirtualTachometer/
+
+## Option 2 — Offline
+
+Download `index.html` and open it directly in a modern browser.
+
+## Option 3 — Clone the repository
+
+```bash
+git clone https://github.com/FireRayo/VirtualTachometer.git
+cd VirtualTachometer
+```
+
+Then open:
+
+```text
+index.html
 ```
 
 ---
 
 # Version history
 
+## V4.0
+
+- Complete Neomorphism / Soft UI redesign.
+- Added complete Light and Dark themes.
+- Added theme selector with persistent preference.
+- Converted the application to a fully self-contained single HTML file.
+- Removed external Material Symbols dependency.
+- Added inline SVG playback/navigation icons.
+- Removed all remote fonts, CDN resources, and external libraries.
+- Reorganized the source code into clearer logical responsibilities.
+- Added extensive internal documentation and comments in Spanish.
+- Improved maintainability and diagnostic readability.
+- Preserved all V3.9 measurement, timing, unit-conversion, CFR/VFR, and FPS features.
+- Improved empty-field handling during unit conversion.
+- Verified operation in both Light and Dark themes.
+
 ## V3.9
 
 - Added automatic numeric conversion when changing Distance or Diameter units.
-- Supports conversion between `mm`, `cm`, `m`, `km`, `in`, `ft`, `yd`, and `mi`.
-- Preserves the same physical measurement when changing units.
-- Keeps the explicit Compute workflow introduced in V3.8.
+- Added conversion between `mm`, `cm`, `m`, `km`, `in`, `ft`, `yd`, and `mi`.
+- Preserved physical measurement when changing units.
 
 ## V3.8
 
 - Any measurement-variable change invalidates the previous result.
-- **Compute** always re-reads the current values and recalculates from scratch.
-- Updated handling for Distance, Diameter, revolutions, units, time basis, Start, and End changes.
+- **Compute** re-reads the current values and calculates from scratch.
+- Updated handling for Distance, Diameter, revolutions, units, time basis, Start, and End.
 
 ## V3.7
 
-- Added Google Material Symbols Rounded playback/navigation controls.
-- Play/Pause dynamically switches between `play_circle` and `pause_circle`.
-- BWD/FWD use `fast_rewind` and `fast_forward`.
+- Added icon-based playback/navigation controls.
 
 ## V3.6
 
@@ -515,7 +666,7 @@ VirtualTachometer/
 ## V3.1–V3.5
 
 - Added MP4/MOV sample timestamp tables.
-- Added `ctts` composition offsets.
+- Added `ctts` composition-offset handling.
 - Added common `elst` edit-list handling.
 - Improved VFR navigation.
 - Added post-seek frame confirmation.
@@ -523,7 +674,6 @@ VirtualTachometer/
 - Added multiple revolutions to Diameter mode.
 - Improved timing-resolution reporting.
 - Removed silent nominal FPS snapping from calibrated FPS.
-- Standardized main control labels.
 
 ## V3.0
 
@@ -531,7 +681,7 @@ VirtualTachometer/
 - Added MP4/MOV timing detection.
 - Added VFR detection.
 - Removed hidden 30 FPS fallback.
-- Added manual FPS entry and recalibration.
+- Added manual FPS input and recalibration.
 - Added seek locking.
 - Added `requestVideoFrameCallback()` timestamp tracking.
 - Added multiple observed revolutions for RPM measurement.
@@ -561,6 +711,9 @@ https://github.com/FireRayo/VirtualTachometer
 Live application:  
 https://firerayo.github.io/VirtualTachometer/
 
+Test videos:  
+https://github.com/FireRayo/VirtualTachometer/tree/main/assets
+
 ---
 
 ## Disclaimer
@@ -569,4 +722,4 @@ VirtualTachometer is a measurement aid based on recorded video timing.
 
 Results may be affected by frame rate, variable frame timing, compression, dropped frames, motion blur, camera exposure, browser decoding behavior, seek accuracy, and Start/End frame selection.
 
-For safety-critical calibration, certification, regulatory verification, or metrology applications, use properly calibrated measurement equipment and a validated measurement procedure.
+For safety-critical calibration, certification, regulatory verification, or metrology applications, use properly calibrated measurement equipment and an appropriate validated measurement procedure.
